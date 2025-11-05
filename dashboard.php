@@ -43,6 +43,7 @@ while ($row = $themesResult->fetch_assoc()) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/tab.css">
+    <link rel="stylesheet" href="css/responsive.css">
     <style>
         :root {
             --primary-color: #d9b99b; /* Modern indigo */
@@ -698,34 +699,228 @@ while ($row = $themesResult->fetch_assoc()) {
         }
         
         /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .books-container {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 18px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .container {
+                max-width: 100%;
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .carousel {
+                margin: 20px 0;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 15px;
+            }
+
+            .see-more {
+                align-self: flex-end;
+            }
+        }
+
         @media (max-width: 768px) {
             .book-img-container {
                 height: 220px;
             }
-            
+
             .library-card {
                 flex-direction: column;
             }
-            
+
             .library-img {
                 width: 100%;
                 height: 140px;
                 margin-right: 0;
                 margin-bottom: 15px;
             }
-            
+
             .books-container {
                 grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 15px;
+                margin: 0 -5px;
+            }
+
+            .book-card {
+                margin: 0 auto;
+            }
+
+            .book-details {
+                padding: 15px;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .theme-tabs {
+                gap: 8px;
+            }
+
+            .theme-tab {
+                padding: 6px 14px;
+                font-size: 0.9rem;
+            }
+
+            .libraries-section {
+                padding: 25px 20px;
+                margin-top: 30px;
+            }
+
+            .search-bar .form-control {
+                padding: 10px 40px;
+                font-size: 0.9rem;
+            }
+
+            .footer {
+                padding: 40px 0 20px;
+                margin-top: 40px;
+            }
+
+            .footer-heading {
+                font-size: 1rem;
+                margin-bottom: 15px;
             }
         }
-        
+
         @media (max-width: 576px) {
             .books-container {
                 grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 12px;
             }
-            
+
+            .book-img-container {
+                height: 200px;
+            }
+
+            .book-details {
+                padding: 12px;
+            }
+
+            .book-title {
+                font-size: 1rem;
+                margin-bottom: 8px;
+            }
+
+            .book-author {
+                font-size: 0.8rem;
+            }
+
+            .book-price {
+                margin-top: 12px;
+            }
+
+            .price-value {
+                font-size: 1rem;
+            }
+
+            .book-actions {
+                margin-top: 12px;
+                gap: 8px;
+            }
+
+            .btn-rent, .btn-buy {
+                padding: 6px 10px;
+                font-size: 0.85rem;
+            }
+
             .section-title {
                 font-size: 1.4rem;
+            }
+
+            .theme-tabs {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .theme-tab {
+                padding: 5px 12px;
+                font-size: 0.85rem;
+            }
+
+            .carousel-caption h3 {
+                font-size: 1.2rem;
+            }
+
+            .carousel-caption p {
+                font-size: 0.9rem;
+            }
+
+            .library-name {
+                font-size: 1rem;
+            }
+
+            .library-location, .library-address {
+                font-size: 0.85rem;
+            }
+
+            .directions-btn {
+                font-size: 0.8rem;
+                padding: 4px 10px;
+            }
+
+            .navbar-brand img {
+                height: 50px;
+            }
+
+            .footer-link {
+                font-size: 0.9rem;
+            }
+
+            .social-icon {
+                width: 32px;
+                height: 32px;
+                margin-right: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+
+            .books-container {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+            }
+
+            .book-img-container {
+                height: 180px;
+            }
+
+            .book-details {
+                padding: 10px;
+            }
+
+            .book-title {
+                font-size: 0.95rem;
+            }
+
+            .section-title {
+                font-size: 1.3rem;
+            }
+
+            .libraries-section {
+                padding: 20px 15px;
+            }
+
+            .search-bar .form-control {
+                padding: 8px 35px;
+                font-size: 0.85rem;
+            }
+
+            .tab-menu {
+                padding: 8px 10px;
             }
         }
     </style>

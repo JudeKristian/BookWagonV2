@@ -525,6 +525,436 @@ $_SESSION['cart_details'] = [
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .container {
+        max-width: 100%;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .cart-item {
+        padding: 20px;
+    }
+
+    .cart-summary {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 992px) {
+    .row {
+        --bs-gutter-x: 15px;
+    }
+
+    .sidebar {
+        margin-bottom: 30px;
+    }
+
+    .cart-container {
+        margin-bottom: 20px;
+    }
+
+    .cart-item {
+        padding: 15px;
+    }
+
+    .cart-item-image {
+        width: 80px;
+        height: 120px;
+        object-fit: cover;
+    }
+
+    .cart-item-title {
+        font-size: 1.1rem;
+    }
+
+    .purchase-type-toggle {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .purchase-option {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+    }
+
+    .cart-summary {
+        margin-top: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .py-5 {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+
+    .sidebar {
+        padding: 15px 0;
+    }
+
+    .sidebar h4 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .sidebar-link {
+        padding: 10px 15px;
+        font-size: 0.95rem;
+    }
+
+    h2 {
+        font-size: 1.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .cart-item {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .cart-item-image {
+        width: 70px;
+        height: 100px;
+        margin-bottom: 10px;
+    }
+
+    .cart-item-title {
+        font-size: 1rem;
+        margin-bottom: 8px;
+    }
+
+    .cart-item-attr {
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    .purchase-type-container {
+        margin-top: 15px;
+    }
+
+    .purchase-type-label {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .purchase-type-toggle {
+        gap: 6px;
+    }
+
+    .purchase-option {
+        padding: 8px;
+        font-size: 0.85rem;
+    }
+
+    .form-select {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .cart-actions {
+        margin-top: 10px;
+    }
+
+    .cart-action {
+        font-size: 0.9rem;
+        padding: 6px 12px;
+    }
+
+    .cart-summary {
+        padding: 20px;
+        margin-top: 20px;
+    }
+
+    .cart-summary h4 {
+        font-size: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .promo-code-form {
+        margin-bottom: 20px;
+    }
+
+    .promo-code-input {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+
+    .promo-code-button {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+
+    .cart-summary-row {
+        padding: 8px 0;
+        font-size: 0.95rem;
+    }
+
+    .checkout-button {
+        padding: 12px;
+        font-size: 1rem;
+    }
+
+    .empty-cart-title {
+        font-size: 1.5rem;
+    }
+
+    .empty-cart-message {
+        font-size: 0.95rem;
+    }
+
+    .continue-shopping-btn {
+        padding: 10px 25px;
+        font-size: 0.95rem;
+    }
+
+    .cart-summary-mobile {
+        display: block !important;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+
+    .cart-summary-mobile .cart-summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .cart-summary-mobile .cart-summary-row:last-child {
+        border-bottom: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .py-5 {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+        text-align: center;
+    }
+
+    .sidebar {
+        padding: 12px 0;
+        border-radius: 6px;
+    }
+
+    .sidebar h4 {
+        font-size: 1.1rem;
+        padding: 0 15px;
+        margin-bottom: 0.75rem;
+    }
+
+    .sidebar-link {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+
+    .sidebar-link i {
+        width: 18px;
+        margin-right: 8px;
+    }
+
+    .cart-item {
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .cart-item-image {
+        width: 60px;
+        height: 90px;
+    }
+
+    .cart-item-title {
+        font-size: 0.95rem;
+        line-height: 1.3;
+    }
+
+    .cart-item-attr {
+        font-size: 0.85rem;
+    }
+
+    .purchase-type-container {
+        margin-top: 12px;
+    }
+
+    .purchase-type-toggle {
+        gap: 5px;
+    }
+
+    .purchase-option {
+        padding: 6px;
+        font-size: 0.8rem;
+        border-radius: 4px;
+    }
+
+    .rent-duration select {
+        font-size: 0.85rem;
+    }
+
+    .cart-actions {
+        margin-top: 8px;
+    }
+
+    .cart-action {
+        font-size: 0.85rem;
+        padding: 5px 10px;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .cart-summary {
+        padding: 16px;
+        border-radius: 8px;
+    }
+
+    .cart-summary h4 {
+        font-size: 1.1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .promo-code-form {
+        margin-bottom: 16px;
+    }
+
+    .promo-code-input {
+        padding: 8px;
+        font-size: 0.85rem;
+    }
+
+    .promo-code-button {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    .cart-summary-row {
+        padding: 6px 0;
+        font-size: 0.9rem;
+    }
+
+    .checkout-button {
+        padding: 10px;
+        font-size: 0.95rem;
+    }
+
+    .free-shipping-message {
+        font-size: 0.85rem;
+    }
+
+    .empty-cart-container {
+        padding: 40px 0;
+        min-height: 40vh;
+    }
+
+    .empty-cart-image {
+        max-width: 120px;
+        margin-bottom: 20px;
+    }
+
+    .empty-cart-title {
+        font-size: 1.25rem;
+        margin-bottom: 12px;
+    }
+
+    .empty-cart-message {
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+
+    .continue-shopping-btn {
+        padding: 8px 20px;
+        font-size: 0.9rem;
+    }
+
+    .cart-summary-mobile {
+        padding: 12px;
+        margin-top: 15px;
+    }
+
+    .cart-summary-mobile .cart-summary-row {
+        padding: 6px 0;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .py-5 {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+
+    .sidebar {
+        margin-bottom: 20px;
+    }
+
+    .cart-item {
+        padding: 10px;
+    }
+
+    .cart-item-image {
+        width: 50px;
+        height: 75px;
+    }
+
+    .purchase-type-toggle {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .purchase-option {
+        text-align: center;
+        padding: 8px 4px;
+        font-size: 0.75rem;
+    }
+
+    .cart-summary {
+        padding: 14px;
+    }
+
+    .cart-summary h4 {
+        font-size: 1rem;
+    }
+
+    .checkout-button {
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+
+    .empty-cart-container {
+        padding: 30px 0;
+    }
+
+    .empty-cart-image {
+        max-width: 100px;
+        margin-bottom: 15px;
+    }
+}
+
 /* Loading Overlay */
 .loading-overlay {
     position: fixed;
@@ -591,6 +1021,10 @@ $_SESSION['cart_details'] = [
                     </a>
                     <a href="rented_books.php" class="sidebar-link">
                         <i class="fa-solid fa-book"></i> Rented books
+                    </a>
+
+                    <a href="collections.php" class="sidebar-link">
+                        <i class="fa-solid fa-bookmark"></i> My Collections
                     </a>
                     <a href="history.php" class="sidebar-link">
                         <i class="fa-solid fa-clock-rotate-left"></i> History

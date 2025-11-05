@@ -3,6 +3,47 @@
     justify-content: space-around;
     padding: 10px;
     border-bottom: 1px solid #ccc;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .tab-menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .tab-menu {
+      justify-content: flex-start;
+      gap: 15px;
+      padding: 10px 15px;
+    }
+
+    .tab-menu a {
+      flex-shrink: 0;
+      white-space: nowrap;
+      min-width: fit-content;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .tab-menu {
+      gap: 10px;
+      padding: 8px 12px;
+    }
+
+    .tab-menu a {
+      font-size: 14px;
+      padding: 8px;
+    }
+
+    .tab-icon {
+      height: 20px;
+      width: 20px;
+      margin-right: 6px;
+    }
   }
 .tab-menu a {
     display: flex;

@@ -572,47 +572,321 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         
         /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .signup-container {
+                max-width: 95%;
+                margin: 0 auto;
+            }
+
+            .signup-image-content {
+                padding: 25px;
+                max-width: 85%;
+            }
+
+            .signup-image-title {
+                font-size: 1.8rem;
+            }
+
+            .signup-image-text {
+                font-size: 1rem;
+            }
+        }
+
         @media (max-width: 992px) {
             .signup-container {
                 max-width: 90%;
+                margin: 0 auto;
+            }
+
+            .signup-image-content {
+                padding: 20px;
+                max-width: 90%;
+            }
+
+            .signup-image-title {
+                font-size: 1.6rem;
+            }
+
+            .signup-image-text {
+                font-size: 0.95rem;
+            }
+
+            .signup-form {
+                padding: 45px 35px;
+            }
+
+            .form-control {
+                height: 50px;
+                padding: 10px 18px;
+                font-size: 0.95rem;
+            }
+
+            .btn-signup {
+                height: 50px;
+                font-size: 1rem;
             }
         }
-        
+
         @media (max-width: 768px) {
             .signup-row {
                 flex-direction: column;
+                min-height: auto;
             }
-            
+
             .signup-image {
                 display: none;
             }
-            
+
             .signup-form {
                 padding: 40px 30px;
+                flex: none;
             }
-            
+
+            .logo img {
+                height: 60px;
+            }
+
+            .logo-text {
+                font-size: 1.4rem;
+            }
+
+            h2 {
+                font-size: 1.7rem;
+            }
+
             .name-row {
                 flex-direction: column;
                 gap: 0;
             }
-            
+
             .name-row .form-group {
                 width: 100%;
             }
+
+            .form-control {
+                height: 48px;
+                padding: 10px 16px;
+                font-size: 0.95rem;
+                margin-bottom: 18px;
+            }
+
+            .btn-signup {
+                height: 48px;
+                font-size: 1rem;
+                margin-top: 8px;
+            }
+
+            .form-check {
+                margin-bottom: 20px;
+            }
+
+            .form-check-label {
+                font-size: 0.9rem;
+            }
+
+            .terms-link {
+                font-size: 0.9rem;
+            }
+
+            .signin-link {
+                font-size: 0.9rem;
+                margin-top: 18px;
+            }
+
+            .alert {
+                padding: 12px;
+                font-size: 0.9rem;
+                margin-bottom: 20px;
+            }
         }
-        
+
         @media (max-width: 576px) {
+            body {
+                padding: 20px 0;
+            }
+
             .signup-container {
                 max-width: 95%;
-                margin: 20px auto;
+                margin: 0 auto;
+                border-radius: 16px;
             }
-            
+
             .signup-form {
                 padding: 30px 20px;
             }
-            
+
+            .logo {
+                margin-bottom: 20px;
+            }
+
+            .logo img {
+                height: 50px;
+            }
+
+            .logo-text {
+                font-size: 1.2rem;
+                margin-left: 8px;
+            }
+
             h2 {
                 font-size: 1.5rem;
+                margin-bottom: 20px;
+            }
+
+            .form-control {
+                height: 45px;
+                padding: 8px 14px;
+                font-size: 0.9rem;
+                margin-bottom: 16px;
+                border-radius: 10px;
+            }
+
+            .btn-signup {
+                height: 45px;
+                font-size: 0.95rem;
+                margin-top: 6px;
+                border-radius: 10px;
+            }
+
+            .form-check {
+                margin-bottom: 18px;
+            }
+
+            .form-check-input {
+                width: 16px;
+                height: 16px;
+            }
+
+            .form-check-label {
+                font-size: 0.85rem;
+                margin-left: 6px;
+            }
+
+            .terms-link {
+                font-size: 0.85rem;
+            }
+
+            .form-divider {
+                margin: 25px 0;
+                font-size: 0.85rem;
+            }
+
+            .form-divider::before,
+            .form-divider::after {
+                width: 38%;
+            }
+
+            .signin-link {
+                font-size: 0.85rem;
+                margin-top: 16px;
+            }
+
+            .alert {
+                padding: 10px;
+                font-size: 0.85rem;
+                margin-bottom: 18px;
+                border-radius: 8px;
+            }
+
+            .invalid-feedback {
+                font-size: 0.8rem;
+                margin-top: -12px;
+                margin-bottom: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px 0;
+            }
+
+            .signup-container {
+                max-width: 98%;
+                margin: 0 auto;
+                border-radius: 12px;
+            }
+
+            .signup-form {
+                padding: 25px 16px;
+            }
+
+            .logo {
+                margin-bottom: 18px;
+            }
+
+            .logo img {
+                height: 45px;
+            }
+
+            .logo-text {
+                font-size: 1.1rem;
+                margin-left: 6px;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+                margin-bottom: 18px;
+            }
+
+            .form-control {
+                height: 42px;
+                padding: 8px 12px;
+                font-size: 0.85rem;
+                margin-bottom: 14px;
+                border-radius: 8px;
+            }
+
+            .btn-signup {
+                height: 42px;
+                font-size: 0.9rem;
+                margin-top: 4px;
+                border-radius: 8px;
+            }
+
+            .form-check {
+                margin-bottom: 16px;
+            }
+
+            .form-check-input {
+                width: 14px;
+                height: 14px;
+            }
+
+            .form-check-label {
+                font-size: 0.8rem;
+                margin-left: 5px;
+            }
+
+            .terms-link {
+                font-size: 0.8rem;
+            }
+
+            .form-divider {
+                margin: 20px 0;
+                font-size: 0.8rem;
+            }
+
+            .form-divider::before,
+            .form-divider::after {
+                width: 35%;
+            }
+
+            .signin-link {
+                font-size: 0.8rem;
+                margin-top: 14px;
+            }
+
+            .alert {
+                padding: 8px;
+                font-size: 0.8rem;
+                margin-bottom: 16px;
+                border-radius: 6px;
+            }
+
+            .invalid-feedback {
+                font-size: 0.75rem;
+                margin-top: -10px;
+                margin-bottom: 10px;
             }
         }
     </style>

@@ -1,0 +1,679 @@
+/* Comprehensive Responsive Styles for BookWagon */
+
+/* Global responsive utilities */
+@media (max-width: 1200px) {
+    .container {
+        max-width: 100%;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    .card {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.8rem; }
+    h3 { font-size: 1.6rem; }
+    h4 { font-size: 1.4rem; }
+    h5 { font-size: 1.2rem; }
+
+    .card-body {
+        padding: 1.25rem;
+    }
+
+    .table-responsive {
+        border: none;
+    }
+
+    .table-responsive .table {
+        margin-bottom: 0;
+    }
+
+    /* Modal responsiveness */
+    .modal-dialog {
+        margin: 1rem;
+        max-width: calc(100vw - 2rem);
+    }
+
+    .modal-content {
+        border-radius: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    h1 { font-size: 1.8rem; }
+    h2 { font-size: 1.6rem; }
+    h3 { font-size: 1.4rem; }
+    h4 { font-size: 1.3rem; }
+    h5 { font-size: 1.1rem; }
+
+    .card {
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    /* Form elements */
+    .form-control {
+        padding: 0.75rem;
+        font-size: 0.95rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .form-select {
+        padding: 0.75rem;
+        font-size: 0.95rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-check {
+        margin-bottom: 1rem;
+    }
+
+    .form-check-input {
+        width: 1.2rem;
+        height: 1.2rem;
+        margin-right: 0.5rem;
+    }
+
+    .form-check-label {
+        font-size: 0.9rem;
+    }
+
+    /* Alert responsiveness */
+    .alert {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    /* Badge responsiveness */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.6rem;
+    }
+
+    /* Progress bars */
+    .progress {
+        height: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Pagination */
+    .pagination {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .page-link {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    /* List group */
+    .list-group-item {
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+        font-size: 0.9rem;
+    }
+
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "/";
+        padding: 0 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    body {
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .btn {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+        border-radius: 6px;
+    }
+
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1.4rem; }
+    h3 { font-size: 1.2rem; }
+    h4 { font-size: 1.1rem; }
+    h5 { font-size: 1rem; }
+
+    .card {
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+    }
+
+    .card-body {
+        padding: 0.875rem;
+    }
+
+    .card-title {
+        font-size: 1.1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .card-text {
+        font-size: 0.9rem;
+    }
+
+    /* Form elements */
+    .form-control {
+        padding: 0.625rem;
+        font-size: 0.9rem;
+        border-radius: 6px;
+        margin-bottom: 0.875rem;
+    }
+
+    .form-select {
+        padding: 0.625rem;
+        font-size: 0.9rem;
+        border-radius: 6px;
+        margin-bottom: 0.875rem;
+    }
+
+    .form-label {
+        font-size: 0.85rem;
+        margin-bottom: 0.375rem;
+    }
+
+    .form-check {
+        margin-bottom: 0.875rem;
+    }
+
+    .form-check-input {
+        width: 1.1rem;
+        height: 1.1rem;
+        margin-right: 0.375rem;
+    }
+
+    .form-check-label {
+        font-size: 0.85rem;
+    }
+
+    /* Input groups */
+    .input-group {
+        margin-bottom: 0.875rem;
+    }
+
+    .input-group-text {
+        font-size: 0.9rem;
+        padding: 0.625rem;
+    }
+
+    /* Alert responsiveness */
+    .alert {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.85rem;
+        border-radius: 6px;
+        margin-bottom: 0.875rem;
+    }
+
+    .alert-dismissible .btn-close {
+        padding: 1rem;
+    }
+
+    /* Badge responsiveness */
+    .badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Button groups */
+    .btn-group {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .btn-group .btn {
+        width: 100%;
+        margin-bottom: 0;
+    }
+
+    /* Dropdown menus */
+    .dropdown-menu {
+        font-size: 0.9rem;
+        border-radius: 6px;
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+    }
+
+    /* Navigation */
+    .nav {
+        flex-direction: column;
+    }
+
+    .nav-link {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .nav-link:last-child {
+        border-bottom: none;
+    }
+
+    /* Tabs */
+    .nav-tabs {
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 1rem;
+    }
+
+    .nav-tabs .nav-link {
+        border: 1px solid transparent;
+        border-radius: 6px 6px 0 0;
+        margin-right: 0.25rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    /* Progress bars */
+    .progress {
+        height: 0.625rem;
+        margin-bottom: 0.875rem;
+    }
+
+    /* Pagination */
+    .pagination {
+        justify-content: center;
+        gap: 0.125rem;
+    }
+
+    .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    /* Modal responsiveness */
+    .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100vw - 1rem);
+    }
+
+    .modal-content {
+        border-radius: 8px;
+    }
+
+    .modal-header {
+        padding: 1rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .modal-footer {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+    }
+
+    /* Toast notifications */
+    .toast {
+        max-width: calc(100vw - 1rem);
+        margin: 0.5rem;
+    }
+
+    /* Tooltip */
+    .tooltip {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
+
+    .container {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .btn {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+        border-radius: 5px;
+    }
+
+    h1 { font-size: 1.4rem; }
+    h2 { font-size: 1.3rem; }
+    h3 { font-size: 1.1rem; }
+    h4 { font-size: 1rem; }
+    h5 { font-size: 0.95rem; }
+
+    .card {
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-body {
+        padding: 0.75rem;
+    }
+
+    .card-title {
+        font-size: 1rem;
+        margin-bottom: 0.625rem;
+    }
+
+    .card-text {
+        font-size: 0.85rem;
+    }
+
+    /* Form elements */
+    .form-control {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+        border-radius: 5px;
+        margin-bottom: 0.75rem;
+    }
+
+    .form-select {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+        border-radius: 5px;
+        margin-bottom: 0.75rem;
+    }
+
+    .form-label {
+        font-size: 0.8rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .form-check {
+        margin-bottom: 0.75rem;
+    }
+
+    .form-check-input {
+        width: 1rem;
+        height: 1rem;
+        margin-right: 0.25rem;
+    }
+
+    .form-check-label {
+        font-size: 0.8rem;
+    }
+
+    /* Input groups */
+    .input-group {
+        margin-bottom: 0.75rem;
+    }
+
+    .input-group-text {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+    }
+
+    /* Alert responsiveness */
+    .alert {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+        border-radius: 5px;
+        margin-bottom: 0.75rem;
+    }
+
+    /* Badge responsiveness */
+    .badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+    }
+
+    /* Dropdown menus */
+    .dropdown-menu {
+        font-size: 0.85rem;
+        border-radius: 5px;
+    }
+
+    .dropdown-item {
+        padding: 0.375rem 0.75rem;
+    }
+
+    /* Navigation */
+    .nav-link {
+        padding: 0.375rem 0;
+        font-size: 0.9rem;
+    }
+
+    /* Tabs */
+    .nav-tabs .nav-link {
+        padding: 0.375rem 0.625rem;
+        font-size: 0.85rem;
+        margin-right: 0.125rem;
+    }
+
+    /* Pagination */
+    .page-link {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.8rem;
+    }
+
+    /* Modal responsiveness */
+    .modal-dialog {
+        margin: 0.25rem;
+        max-width: calc(100vw - 0.5rem);
+    }
+
+    .modal-content {
+        border-radius: 6px;
+    }
+
+    .modal-header {
+        padding: 0.75rem;
+    }
+
+    .modal-body {
+        padding: 0.75rem;
+    }
+
+    .modal-footer {
+        padding: 0.75rem;
+    }
+
+    /* Toast notifications */
+    .toast {
+        max-width: calc(100vw - 0.5rem);
+        margin: 0.25rem;
+        font-size: 0.85rem;
+    }
+
+    /* Tooltip */
+    .tooltip {
+        font-size: 0.75rem;
+    }
+
+    /* Image responsiveness */
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* Table responsiveness */
+    .table-responsive {
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .table {
+        font-size: 0.85rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.5rem;
+        vertical-align: middle;
+    }
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .container {
+        max-width: none;
+        padding: 0;
+    }
+
+    .card {
+        border: 1px solid #ddd;
+        box-shadow: none;
+        break-inside: avoid;
+    }
+
+    .btn {
+        display: none;
+    }
+
+    .navbar,
+    .footer {
+        display: none;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .card {
+        border: 2px solid;
+    }
+
+    .btn {
+        border: 2px solid;
+    }
+
+    .form-control {
+        border: 2px solid;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Dark mode support (if needed in future) */
+@media (prefers-color-scheme: dark) {
+    /* Add dark mode styles here when implementing dark theme */
+}
+
+/* Focus visibility for accessibility */
+@media (prefers-reduced-motion: no-preference) {
+    .btn:focus,
+    .form-control:focus,
+    .form-select:focus {
+        outline: 2px solid #007bff;
+        outline-offset: 2px;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .nav-link {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    .dropdown-item {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-control,
+    .form-select {
+        min-height: 44px;
+    }
+}
+
+/* Landscape orientation on small screens */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+    .container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .card {
+        margin-bottom: 0.5rem;
+    }
+
+    h1, h2, h3, h4, h5 {
+        margin-bottom: 0.5rem;
+    }
+}

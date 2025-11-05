@@ -18,7 +18,7 @@ try {
     $query = "SELECT bs.*, u.firstname, u.lastname, u.profile_picture as user_avatar
               FROM book_swaps bs
               JOIN users u ON bs.user_id = u.id
-              WHERE bs.user_id = ?
+              WHERE bs.user_id = ? AND bs.status != 'swapped'
               ORDER BY bs.created_at DESC";
     
     $stmt = $conn->prepare($query);

@@ -47,7 +47,7 @@ $photo = $_SESSION['profile_picture'] ?? '';
             padding: 15px 0;
             border-bottom: 1px solid var(--border-color);
             position: relative;
-            z-index: 1050; /* Higher z-index than other elements */
+            z-index: 1040; /* Lower than modal z-index */
         }
         
         .navbar-brand img {
@@ -60,12 +60,14 @@ $photo = $_SESSION['profile_picture'] ?? '';
         /* Enhanced Card Design */
         .book-card {
             width: 100%;
-            height: auto;
+            height: 100%;
             background-color: white;
             border-radius: 20px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.1);
             overflow: hidden;
             transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
         .book-card:hover {
             transform: translateY(-5px);
@@ -74,6 +76,7 @@ $photo = $_SESSION['profile_picture'] ?? '';
             height: 300px;
             overflow: hidden;
             position: relative;
+            flex-shrink: 0;
         }
         .book-image {
             width: 100%;
@@ -87,6 +90,9 @@ $photo = $_SESSION['profile_picture'] ?? '';
         .book-details {
             padding: 1.5rem;
             text-align: left;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
         .book-title {
             font-size: 1.4rem;
@@ -146,10 +152,10 @@ $photo = $_SESSION['profile_picture'] ?? '';
             transition: all 0.3s ease;
             display: block;
             width: 100%;
-            margin-bottom: 1rem;
+            margin-top: auto;
         }
         .swap-btn:hover {
-            background-color: #e09200;
+            background-color: #c8a882;
             transform: translateY(-2px);
         }
         
@@ -237,6 +243,12 @@ $photo = $_SESSION['profile_picture'] ?? '';
         }
         
         /* Modal */
+        .modal {
+            z-index: 1055; /* Ensure modal is above navbar */
+        }
+        .modal-backdrop {
+            z-index: 1050;
+        }
         .modal-content {
             border-radius: 15px;
             overflow: hidden;
@@ -388,10 +400,42 @@ $photo = $_SESSION['profile_picture'] ?? '';
             background-color: #c0392b;
         }
         
+        /* Success Toast Notification */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1060;
+        }
+        .toast {
+            background-color: white;
+            border-left: 4px solid #28a745;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .toast-success {
+            border-left-color: #28a745;
+        }
+        .toast-error {
+            border-left-color: #dc3545;
+        }
+        
+        /* Ensure equal height cards */
+        .book-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        .book-grid .col-md-3 {
+            display: flex;
+        }
+        
         /* Responsive */
         @media (max-width: 992px) {
             .book-card {
                 margin-bottom: 30px;
+            }
+            .book-grid {
+                gap: 1rem;
             }
         }
         @media (max-width: 768px) {
@@ -409,6 +453,12 @@ $photo = $_SESSION['profile_picture'] ?? '';
             }
             .request-card {
                 padding: 15px;
+            }
+            .book-grid {
+                flex-direction: column;
+            }
+            .book-grid .col-md-3 {
+                width: 100%;
             }
         }
     </style>
@@ -507,7 +557,7 @@ $photo = $_SESSION['profile_picture'] ?? '';
                         <button class="filter-btn" data-condition="Acceptable">Acceptable</button>
                     </div>
                     
-                    <div class="row" id="availableBooksContainer">
+                    <div class="row book-grid" id="availableBooksContainer">
                         <!-- Books will be loaded here via JavaScript -->
                         <div class="col-12">
                             <div class="text-center py-5">
@@ -524,7 +574,7 @@ $photo = $_SESSION['profile_picture'] ?? '';
                 <div class="tab-pane fade" id="my-books" role="tabpanel" aria-labelledby="my-books-tab">
                     <p class="mb-4">These are the books you've added for swapping:</p>
                     
-                    <div class="row" id="myBooksContainer">
+                    <div class="row book-grid" id="myBooksContainer">
                         <!-- My books will be loaded here via JavaScript -->
                         <div class="col-12">
                             <div class="text-center py-5">
@@ -570,8 +620,32 @@ $photo = $_SESSION['profile_picture'] ?? '';
         </div>
     </div>
 
+    <!-- Toast Notification Container -->
+    <div class="toast-container">
+        <div id="successToast" class="toast toast-success" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="successToastBody">
+                Book added successfully!
+            </div>
+        </div>
+        <div id="errorToast" class="toast toast-error" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-exclamation-circle text-danger me-2"></i>
+                <strong class="me-auto">Error</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="errorToastBody">
+                An error occurred!
+            </div>
+        </div>
+    </div>
+
     <!-- Add Book Modal -->
-    <div class="modal fade" id="addBookModal" tabindex="-1" aria-labelledby="addBookModalLabel" aria-hidden="true">
+    <div class="modal fade" id="addBookModal" tabindex="-1" aria-labelledby="addBookModalLabel" aria-hidden="true" data-bs-backdrop="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -616,7 +690,7 @@ $photo = $_SESSION['profile_picture'] ?? '';
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary" id="submitBook">Add Book</button>
+                            <button type="submit" class="btn btn-primary">Add Book</button>
                         </div>
                     </form>
                 </div>
@@ -625,7 +699,7 @@ $photo = $_SESSION['profile_picture'] ?? '';
     </div>
 
     <!-- Swap Request Modal -->
-    <div class="modal fade" id="swapRequestModal" tabindex="-1" aria-labelledby="swapRequestModalLabel" aria-hidden="true">
+    <div class="modal fade" id="swapRequestModal" tabindex="-1" aria-labelledby="swapRequestModalLabel" aria-hidden="true" data-bs-backdrop="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">

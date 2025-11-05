@@ -692,25 +692,299 @@ $rating = rand(4, 5);
         }
         
         /* Responsive adjustments */
-        @media (max-width: 767.98px) {
+        @media (max-width: 1200px) {
+            .book-details-container {
+                padding: 2rem;
+            }
+
+            .book-title {
+                font-size: 2.2rem;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .book-details-container {
+                padding: 1.5rem;
+            }
+
             .book-title {
                 font-size: 2rem;
             }
-            
-            .book-cover {
-                max-height: 400px;
+
+            .tab-content {
+                padding: 2rem;
             }
-            
+
+            .seller-card {
+                padding: 1.25rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .book-details-container {
+                margin-top: 1rem;
+                margin-bottom: 1rem;
+                padding: 1.25rem;
+            }
+
+            .row {
+                --bs-gutter-x: 0;
+            }
+
+            .book-title {
+                font-size: 1.8rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .book-author {
+                font-size: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .ratings {
+                margin-bottom: 1rem;
+            }
+
+            .book-cover {
+                max-height: 350px;
+            }
+
+            .book-cover-container {
+                margin-bottom: 1rem;
+            }
+
+            .seller-card {
+                margin-bottom: 1.5rem;
+                padding: 1rem;
+            }
+
+            .seller-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.75rem;
+            }
+
+            .seller-avatar {
+                margin-right: 0;
+                width: 50px;
+                height: 50px;
+                font-size: 1.25rem;
+            }
+
+            .seller-stats {
+                justify-content: space-around;
+                padding-top: 0.75rem;
+            }
+
+            .seller-stat-value {
+                font-size: 1.1rem;
+            }
+
             .tab-content {
                 padding: 1.5rem;
+                border-radius: 0 8px 8px 8px;
             }
-            
+
+            .nav-tabs {
+                flex-direction: row;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+
+            .nav-tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .nav-tabs .nav-item {
+                flex-shrink: 0;
+            }
+
+            .edition-details {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+
+            .review-item {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+
+            .reviewer-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .review-date {
+                margin-left: 0;
+                margin-top: 0.25rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .book-details-container {
+                padding: 1rem;
+                border-radius: 12px;
+            }
+
+            .book-title {
+                font-size: 1.6rem;
+                line-height: 1.3;
+            }
+
+            .book-author {
+                font-size: 0.95rem;
+            }
+
+            .ratings {
+                font-size: 0.9rem;
+            }
+
+            .star {
+                font-size: 1rem;
+            }
+
+            .book-cover {
+                max-height: 300px;
+            }
+
+            .book-badge {
+                top: 10px;
+                right: 10px;
+                padding: 6px 12px;
+                font-size: 0.75rem;
+            }
+
+            .seller-card {
+                padding: 0.875rem;
+                margin-bottom: 1rem;
+            }
+
+            .seller-avatar {
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
+            }
+
+            .seller-info h4 {
+                font-size: 1.1rem;
+            }
+
+            .seller-title {
+                font-size: 0.85rem;
+            }
+
+            .seller-stats {
+                margin-top: 0.75rem;
+                padding-top: 0.75rem;
+            }
+
+            .seller-stat-value {
+                font-size: 1.1rem;
+            }
+
+            .seller-stat-label {
+                font-size: 0.8rem;
+            }
+
+            .contact-seller-btn {
+                padding: 0.625rem;
+                font-size: 0.9rem;
+            }
+
+            .tab-content {
+                padding: 1.25rem;
+            }
+
+            .edition-title {
+                font-size: 1.1rem;
+            }
+
+            .book-description {
+                font-size: 1rem;
+                line-height: 1.7;
+            }
+
+            .book-quote {
+                padding: 12px 20px;
+                margin: 15px 0;
+                font-size: 0.95rem;
+            }
+
+            .review-item {
+                padding: 16px;
+            }
+
+            .reviewer-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+
+            .reviewer-name {
+                font-size: 1rem;
+            }
+
+            .review-text {
+                font-size: 0.95rem;
+                line-height: 1.6;
+            }
+
+            .action-form {
+                padding: 12px;
+                gap: 8px;
+            }
+
             .action-button {
-                padding: 14px;
+                padding: 12px;
+                font-size: 0.9rem;
             }
-            
+
             .detail-label {
-                width: 110px;
+                width: 100px;
+                font-size: 0.9rem;
+            }
+
+            .detail-value {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .book-details-container {
+                padding: 0.875rem;
+                margin-top: 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .book-title {
+                font-size: 1.4rem;
+            }
+
+            .book-author {
+                font-size: 0.9rem;
+            }
+
+            .book-cover {
+                max-height: 250px;
+            }
+
+            .seller-card {
+                padding: 0.75rem;
+            }
+
+            .tab-content {
+                padding: 1rem;
+            }
+
+            .edition-details {
+                padding: 16px;
+            }
+
+            .review-item {
+                padding: 14px;
             }
         }
         

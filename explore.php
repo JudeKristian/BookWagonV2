@@ -87,7 +87,7 @@ $postsQuery = "SELECT fp.*,
 $postsResult = $conn->query($postsQuery);
 
 // Fetch recent active posts for sidebar
-$recentQuery = "SELECT fp.post_id, fp.title, fp.created_at, u.firstname, u.lastname
+$recentQuery = "SELECT fp.post_id, fp.title, fp.created_at, u.id as user_id, u.firstname, u.lastname
                 FROM forum_posts fp
                 LEFT JOIN users u ON fp.user_id = u.id
                 ORDER BY fp.created_at DESC LIMIT 5";
@@ -167,6 +167,7 @@ function time_elapsed_string($datetime, $full = false) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link rel="stylesheet" href="css/tab.css">
+    <link rel="stylesheet" href="css/responsive.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -474,6 +475,12 @@ function time_elapsed_string($datetime, $full = false) {
             font-weight: 500;
             font-size: 0.9rem;
             color: var(--dark-color);
+            transition: var(--transition);
+        }
+        
+        .user-name:hover {
+            color: var(--primary-color);
+            text-decoration: underline !important;
         }
         
         .post-stats {
@@ -581,26 +588,215 @@ function time_elapsed_string($datetime, $full = false) {
         .card-body form .dropdown {
             margin-right: 5px;
         }
-        
+
         .card-body form .dropdown select {
             border-radius: 4px;
             border-color: #dee2e6;
         }
-        
+
         .card-body form .btn {
             border-radius: 4px;
         }
-        
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .forum-container .row {
+                flex-direction: column;
+            }
+
+            .forum-container .col-lg-8,
+            .forum-container .col-lg-4 {
+                flex: 1 1 100%;
+                max-width: 100%;
+            }
+
+            .forum-sidebar {
+                order: -1;
+                margin-bottom: 2rem;
+            }
+        }
+
         @media (max-width: 768px) {
+            .forum-header {
+                padding: 1.5rem;
+            }
+
+            .forum-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .forum-header p {
+                font-size: 0.95rem;
+            }
+
+            .card-body form {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
             .card-body form .dropdown {
-                flex: 1 0 48%;
-                min-width: 150px;
-                margin-bottom: 10px;
+                margin-right: 0;
+                width: 100%;
             }
-            
+
             .card-body form .btn {
-                margin-top: 10px;
+                width: 100%;
             }
+
+            .post-card {
+                margin-bottom: 1.5rem;
+            }
+
+            .post-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .post-stats {
+                justify-content: flex-start;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+            }
+
+            .post-actions {
+                justify-content: space-between;
+            }
+
+            .post-actions .btn {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .category-list li a {
+                padding: 0.75rem;
+            }
+
+            .category-icon {
+                width: 32px;
+                height: 32px;
+            }
+
+            .category-icon i {
+                font-size: 0.9rem;
+            }
+
+            .recent-list li {
+                padding: 0.75rem;
+            }
+
+            .recent-title {
+                font-size: 0.85rem;
+            }
+
+            .tag-cloud {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .tag {
+                font-size: 0.8rem;
+                padding: 0.25rem 0.5rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .forum-header {
+                padding: 1rem;
+            }
+
+            .forum-header h1 {
+                font-size: 1.6rem;
+            }
+
+            .forum-header .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .post-card {
+                margin-bottom: 1rem;
+            }
+
+            .post-content {
+                font-size: 0.9rem;
+            }
+
+            .user-info {
+                font-size: 0.85rem;
+            }
+
+            .post-stats {
+                font-size: 0.8rem;
+            }
+
+            .forum-sidebar-card {
+                margin-bottom: 1.5rem;
+            }
+
+            .card-header {
+                padding: 0.75rem 1rem;
+                font-size: 0.95rem;
+            }
+
+            .category-list li a {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.9rem;
+            }
+
+            .recent-list li {
+                padding: 0.5rem 0.75rem;
+            }
+
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+
+            .modal-body {
+                padding: 1rem;
+            }
+
+            .form-control, .form-select {
+                font-size: 0.9rem;
+            }
+        }
+        
+        .avatar a {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .recent-meta a {
+            color: var(--dark-color);
+            transition: var(--transition);
+        }
+        
+        .recent-meta a:hover {
+            color: var(--primary-color);
+            text-decoration: underline !important;
+        }
+        
+        /* Book buddies styles */
+        .book-buddy-badge {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            margin-left: 0.5rem;
+        }
+        
+        .book-buddy-badge i {
+            margin-right: 0.25rem;
+            font-size: 0.7rem;
         }
     </style>
 </head>
@@ -756,14 +952,18 @@ function time_elapsed_string($datetime, $full = false) {
                                     <div class="user-info">
                                         <div class="avatar avatar-sm">
                                             <?php if (!empty($post['profile_picture']) && file_exists($post['profile_picture'])): ?>
-                                                <img src="<?= htmlspecialchars($post['profile_picture']) ?>" alt="Profile">
+                                                <a href="profile.php?id=<?= $post['user_id'] ?>">
+                                                    <img src="<?= htmlspecialchars($post['profile_picture']) ?>" alt="Profile">
+                                                </a>
                                             <?php else: ?>
-                                                <?= strtoupper(substr($post['firstname'] ?? $post['email'], 0, 1)) ?>
+                                                <a href="profile.php?id=<?= $post['user_id'] ?>">
+                                                    <?= strtoupper(substr($post['firstname'] ?? $post['email'], 0, 1)) ?>
+                                                </a>
                                             <?php endif; ?>
                                         </div>
-                                        <span class="user-name">
+                                        <a href="profile.php?id=<?= $post['user_id'] ?>" class="user-name text-decoration-none">
                                             <?= htmlspecialchars($post['firstname'] . ' ' . $post['lastname']) ?>
-                                        </span>
+                                        </a>
                                     </div>
                                     <span class="post-date">
                                         <i class="far fa-clock me-1"></i>
@@ -916,7 +1116,7 @@ function time_elapsed_string($datetime, $full = false) {
                                         </a>
                                     </div>
                                     <div class="recent-meta">
-                                        <span>by <?= htmlspecialchars($recent['firstname'] . ' ' . $recent['lastname']) ?></span>
+                                        <span>by <a href="profile.php?id=<?= $recent['user_id'] ?>" class="text-decoration-none"><?= htmlspecialchars($recent['firstname'] . ' ' . $recent['lastname']) ?></a></span>
                                         <span class="ms-2"><?= time_elapsed_string($recent['created_at']) ?></span>
                                     </div>
                                 </li>

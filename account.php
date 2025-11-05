@@ -288,6 +288,9 @@ $tax_id = $user['tax_id'] ?? '';
                     <a href="rented_books.php" class="sidebar-link">
                         <i class="fa-solid fa-book"></i> Rented Books
                     </a>
+                    <a href="collections.php" class="sidebar-link">
+                        <i class="fa-solid fa-bookmark"></i> My Collections
+                    </a>
                     <a href="history.php" class="sidebar-link">
                         <i class="fa-solid fa-clock-rotate-left"></i> History
                     </a>

@@ -1,10 +1,19 @@
 document.addEventListener('DOMContentLoaded', function() {
     loadAvailableBooks();
     loadMyBooks();
+    initializeSearchAndFilter();
     
-    document.getElementById('submitBook').addEventListener('click', function() {
-        const form = document.getElementById('addBookForm');
-        const formData = new FormData(form);
+    document.getElementById('addBookForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Adding Book...';
+        
+        const formData = new FormData(this);
         
         fetch('api/add_book.php', {
             method: 'POST',
@@ -13,15 +22,25 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('addBookModal')).hide();
-                form.reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addBookModal'));
+                modal.hide();
+                this.reset();
+                showToast('success', 'Book added successfully! It\'s now available for swapping.');
                 loadAvailableBooks();
                 loadMyBooks();
-        } else {
-                alert(data.message);
+            } else {
+                showToast('error', data.message || 'Failed to add book. Please try again.');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'An error occurred. Please try again.');
+        })
+        .finally(() => {
+            // Reset button state
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        });
     });
     
     // Handle swap request form submission
@@ -47,16 +66,16 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 bootstrap.Modal.getInstance(document.getElementById('swapRequestModal')).hide();
-                alert('Swap request sent successfully!');
+                showToast('success', 'Swap request sent successfully!');
                 // Reload swap requests
                 loadSwapRequests();
                     } else {
-                alert(data.message || 'Failed to send swap request. Please try again.');
+                showToast('error', data.message || 'Failed to send swap request. Please try again.');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            showToast('error', 'An error occurred. Please try again.');
         })
         .finally(() => {
             // Re-enable button and hide spinner
@@ -101,23 +120,52 @@ function loadAvailableBooks() {
                     
                     colDiv.innerHTML = `
                         <div class="book-card">
-                            <img src="${book.image_path}" class="book-image w-100" alt="${book.book_title}">
-                            <div class="card-body p-3">
-                                <h5 class="card-title">${book.book_title}</h5>
-                                <p class="card-text">By ${book.author}</p>
-                                <p class="card-text"><small>Condition: ${book.condition}</small></p>
-                                <p class="card-text"><small>Owner: ${book.firstname} ${book.lastname}</small></p>
-                                <button class="btn swap-btn w-100" onclick="initiateSwap(${book.id})">Request Swap</button>
+                            <div class="book-image-container">
+                                <img src="${book.image_path}" class="book-image" alt="${book.book_title}">
+                                <div class="book-condition condition-${book.condition.replace(/\s+/g, '-')}">${book.condition}</div>
+                            </div>
+                            <div class="book-details">
+                                <h5 class="book-title">${book.book_title}</h5>
+                                <p class="book-author">By ${book.author}</p>
+                                <div class="book-owner">
+                                    <img src="${book.profile_picture || 'images/icons/default-avatar.png'}" class="owner-avatar" alt="${book.firstname}">
+                                    <span>Owner: ${book.firstname} ${book.lastname}</span>
+                                </div>
+                                <button class="btn swap-btn" onclick="initiateSwap(${book.id})">Request Swap</button>
                             </div>
                         </div>`;
                     
                     container.appendChild(colDiv);
                 });
+                
+                // Re-initialize search and filter after loading books
+                setTimeout(() => {
+                    initializeSearchAndFilter();
+                }, 100);
             } else {
                 console.error('Error loading books:', data.message);
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="no-books-message">
+                            <h4>Error Loading Books</h4>
+                            <p>${data.message || 'Unable to load available books. Please try again later.'}</p>
+                            <button class="btn btn-primary" onclick="loadAvailableBooks()">Retry</button>
+                        </div>
+                    </div>`;
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            const container = document.getElementById('availableBooksContainer');
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="no-books-message">
+                        <h4>Connection Error</h4>
+                        <p>Unable to connect to the server. Please check your internet connection and try again.</p>
+                        <button class="btn btn-primary" onclick="loadAvailableBooks()">Retry</button>
+                    </div>
+                </div>`;
+        });
 }
 
 function loadMyBooks() {
@@ -152,13 +200,16 @@ function loadMyBooks() {
                     
                     colDiv.innerHTML = `
                         <div class="book-card">
-                            <img src="${book.image_path}" class="book-image w-100" alt="${book.book_title}">
-                            <div class="card-body p-3">
-                                <h5 class="card-title">${book.book_title}</h5>
-                                <p class="card-text">By ${book.author}</p>
-                                <p class="card-text"><small>Condition: ${book.condition}</small></p>
-                                <button class="btn btn-danger w-100 mb-2" onclick="deleteBook(${book.id})">Remove</button>
-                    </div>
+                            <div class="book-image-container">
+                                <img src="${book.image_path}" class="book-image" alt="${book.book_title}">
+                                <div class="book-condition condition-${book.condition.replace(/\s+/g, '-')}">${book.condition}</div>
+                            </div>
+                            <div class="book-details">
+                                <h5 class="book-title">${book.book_title}</h5>
+                                <p class="book-author">By ${book.author}</p>
+                                <p class="book-description">${book.description || 'No description available.'}</p>
+                                <button class="btn btn-danger w-100" onclick="deleteBook(${book.id})">Remove from Swap</button>
+                            </div>
                         </div>`;
                     
                     container.appendChild(colDiv);
@@ -173,9 +224,28 @@ function loadMyBooks() {
                 });
             } else {
                 console.error('Error loading my books:', data.message);
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="no-books-message">
+                            <h4>Error Loading Your Books</h4>
+                            <p>${data.message || 'Unable to load your books. Please try again later.'}</p>
+                            <button class="btn btn-primary" onclick="loadMyBooks()">Retry</button>
+                        </div>
+                    </div>`;
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            const container = document.getElementById('myBooksContainer');
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="no-books-message">
+                        <h4>Connection Error</h4>
+                        <p>Unable to connect to the server. Please check your internet connection and try again.</p>
+                        <button class="btn btn-primary" onclick="loadMyBooks()">Retry</button>
+                    </div>
+                </div>`;
+        });
 }
 
 function loadSwapRequests() {
@@ -364,12 +434,12 @@ function initiateSwap(bookId) {
                 // Load user's books for the dropdown
                 loadMyBooks();
             } else {
-                alert('Error loading book details. Please try again.');
+                showToast('error', 'Error loading book details. Please try again.');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            showToast('error', 'An error occurred. Please try again.');
         });
 }
 
@@ -389,7 +459,7 @@ function handleSwapRequest(requestId, action) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
+            showToast('success', data.message || `Swap request ${action}ed successfully!`);
             if (action === 'accept') {
                 // Show logistics modal only for accepted requests
                 showLogisticsModal(requestId);
@@ -397,12 +467,12 @@ function handleSwapRequest(requestId, action) {
                 loadSwapRequests();
             }
         } else {
-            alert(data.message || `Failed to ${action} request. Please try again.`);
+            showToast('error', data.message || `Failed to ${action} request. Please try again.`);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        showToast('error', 'An error occurred. Please try again.');
     });
 }
 
@@ -423,15 +493,15 @@ function cancelRequest(requestId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-            alert('Swap request cancelled successfully!');
+            showToast('success', 'Swap request cancelled successfully!');
             loadSwapRequests();
             } else {
-            alert(data.message || 'Failed to cancel request. Please try again.');
+            showToast('error', data.message || 'Failed to cancel request. Please try again.');
             }
         })
         .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        showToast('error', 'An error occurred. Please try again.');
     });
 }
 
@@ -453,16 +523,16 @@ function deleteBook(bookId) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-            alert('Book removed successfully!');
+            showToast('success', 'Book removed successfully!');
             loadMyBooks();
             loadAvailableBooks();
                     } else {
-            alert(data.message || 'Failed to remove book. Please try again.');
+            showToast('error', data.message || 'Failed to remove book. Please try again.');
                 }
             })
             .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        showToast('error', 'An error occurred. Please try again.');
     });
 }
 
@@ -537,21 +607,86 @@ function showLogisticsModal(requestId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Delivery details saved successfully!');
+                showToast('success', 'Delivery details saved successfully!');
                 logisticsModal.hide();
                 loadSwapRequests(); // Refresh the requests list
             } else {
-                alert(data.message || 'Failed to save delivery details');
+                showToast('error', data.message || 'Failed to save delivery details');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            showToast('error', 'An error occurred. Please try again.');
         });
     });
     
     // Remove modal when closed
     document.getElementById('logisticsModal').addEventListener('hidden.bs.modal', function() {
         this.remove();
+    });
+}
+
+// Toast notification function
+function showToast(type, message) {
+    const toastId = type === 'success' ? 'successToast' : 'errorToast';
+    const toastBodyId = type === 'success' ? 'successToastBody' : 'errorToastBody';
+    
+    const toastElement = document.getElementById(toastId);
+    const toastBody = document.getElementById(toastBodyId);
+    
+    if (toastElement && toastBody) {
+        toastBody.textContent = message;
+        const toast = new bootstrap.Toast(toastElement, {
+            autohide: true,
+            delay: 5000
+        });
+        toast.show();
+    }
+}
+
+// Search and filter functionality
+function initializeSearchAndFilter() {
+    // Search functionality
+    const searchInput = document.getElementById('searchBooks');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const bookCards = document.querySelectorAll('#availableBooksContainer .col-md-3');
+            
+            bookCards.forEach(card => {
+                const title = card.querySelector('.book-title')?.textContent.toLowerCase() || '';
+                const author = card.querySelector('.book-author')?.textContent.toLowerCase() || '';
+                
+                if (title.includes(searchTerm) || author.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // Filter functionality
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons
+            filterButtons.forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            const condition = this.getAttribute('data-condition');
+            const bookCards = document.querySelectorAll('#availableBooksContainer .col-md-3');
+            
+            bookCards.forEach(card => {
+                const bookCondition = card.querySelector('.book-condition')?.textContent || '';
+                
+                if (condition === 'all' || bookCondition === condition) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
     });
 }
