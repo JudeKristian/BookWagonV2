@@ -47,7 +47,15 @@ $photo = $_SESSION['profile_picture'] ?? '';
             padding: 15px 0;
             border-bottom: 1px solid var(--border-color);
             position: relative;
-            z-index: 1040; /* Lower than modal z-index */
+            z-index: 1030 !important; /* Lower than modal z-index */
+        }
+        
+        /* Ensure all navbar children are below modals */
+        .navbar .dropdown,
+        .navbar .dropdown-menu,
+        .navbar .notification-dropdown,
+        .navbar .notification-dropdown .dropdown-menu {
+            z-index: 1030 !important;
         }
         
         .navbar-brand img {
@@ -242,16 +250,96 @@ $photo = $_SESSION['profile_picture'] ?? '';
             color: var(--primary-color);
         }
         
-        /* Modal */
+        /* Modal - Ensure it's above everything */
         .modal {
-            z-index: 1055; /* Ensure modal is above navbar */
+            z-index: 1070 !important; /* Higher than everything */
+            pointer-events: auto !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            outline: 0 !important;
+        }
+        .modal.show {
+            z-index: 1070 !important;
+            pointer-events: auto !important;
+            display: block !important;
+        }
+        .modal.fade {
+            transition: opacity 0.15s linear;
+        }
+        .modal.fade:not(.show) {
+            opacity: 0;
+        }
+        .modal.fade.show {
+            opacity: 1;
         }
         .modal-backdrop {
-            z-index: 1050;
+            z-index: 1060 !important;
+            pointer-events: auto !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background-color: rgba(0, 0, 0, 0.5) !important;
+        }
+        .modal-backdrop.show {
+            z-index: 1060 !important;
+            pointer-events: auto !important;
+            opacity: 0.5 !important;
+        }
+        .modal-backdrop.fade {
+            opacity: 0;
+        }
+        .modal-backdrop.fade.show {
+            opacity: 0.5;
+        }
+        .modal-dialog {
+            z-index: 1071 !important;
+            pointer-events: auto !important;
+            position: relative !important;
+            width: auto !important;
+            margin: 1.75rem auto !important;
+            max-width: 500px !important;
+        }
+        .modal-dialog.modal-lg {
+            max-width: 800px !important;
         }
         .modal-content {
             border-radius: 15px;
             overflow: hidden;
+            z-index: 1072 !important;
+            position: relative;
+            pointer-events: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+            background-color: #fff !important;
+            border: 1px solid rgba(0, 0, 0, 0.2) !important;
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.5) !important;
+        }
+        /* Ensure navbar doesn't block modals */
+        .navbar,
+        .navbar * {
+            pointer-events: auto;
+        }
+        /* When modal is open, disable pointer events on navbar dropdowns */
+        body.modal-open .navbar .dropdown-menu {
+            pointer-events: none !important;
+        }
+        body.modal-open .navbar .dropdown-menu.show {
+            display: none !important;
+        }
+        /* Ensure dropdowns are below modals */
+        .dropdown-menu {
+            z-index: 1030 !important;
+        }
+        .dropdown-menu.show {
+            z-index: 1030 !important;
         }
         .modal-header {
             background-color: var(--primary-color);
@@ -746,6 +834,118 @@ $photo = $_SESSION['profile_picture'] ?? '';
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Close any open dropdowns when modals are shown
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure all modals are direct children of body (Bootstrap requirement)
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (modal.parentElement !== document.body) {
+                    document.body.appendChild(modal);
+                }
+            });
+            
+            function closeAllDropdowns() {
+                // Close all Bootstrap dropdowns
+                const dropdownToggles = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+                dropdownToggles.forEach(toggle => {
+                    const dropdownInstance = bootstrap.Dropdown.getInstance(toggle);
+                    if (dropdownInstance) {
+                        dropdownInstance.hide();
+                    }
+                });
+                
+                // Also remove show class from dropdown menus directly
+                const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
+                openDropdowns.forEach(dropdown => {
+                    dropdown.classList.remove('show');
+                    dropdown.style.display = 'none';
+                });
+                
+                // Remove aria-expanded attributes
+                dropdownToggles.forEach(toggle => {
+                    toggle.setAttribute('aria-expanded', 'false');
+                });
+            }
+            
+            // Function to ensure modal is on top and properly positioned
+            function ensureModalOnTop(modalElement) {
+                if (modalElement) {
+                    // Ensure modal is a direct child of body (Bootstrap requirement)
+                    if (modalElement.parentElement !== document.body) {
+                        document.body.appendChild(modalElement);
+                    }
+                    
+                    // Force positioning and z-index
+                    modalElement.style.position = 'fixed';
+                    modalElement.style.top = '0';
+                    modalElement.style.left = '0';
+                    modalElement.style.width = '100%';
+                    modalElement.style.height = '100%';
+                    modalElement.style.zIndex = '1070';
+                    modalElement.style.display = 'block';
+                    
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.style.position = 'fixed';
+                        backdrop.style.top = '0';
+                        backdrop.style.left = '0';
+                        backdrop.style.width = '100vw';
+                        backdrop.style.height = '100vh';
+                        backdrop.style.zIndex = '1060';
+                    }
+                    
+                    const dialog = modalElement.querySelector('.modal-dialog');
+                    if (dialog) {
+                        dialog.style.position = 'relative';
+                        dialog.style.zIndex = '1071';
+                        dialog.style.margin = '1.75rem auto';
+                    }
+                    
+                    const content = modalElement.querySelector('.modal-content');
+                    if (content) {
+                        content.style.position = 'relative';
+                        content.style.zIndex = '1072';
+                    }
+                }
+            }
+            
+            // Handle Add Book Modal
+            const addBookModal = document.getElementById('addBookModal');
+            if (addBookModal) {
+                addBookModal.addEventListener('show.bs.modal', function() {
+                    closeAllDropdowns();
+                    setTimeout(() => {
+                        ensureModalOnTop(addBookModal);
+                    }, 10);
+                });
+                addBookModal.addEventListener('shown.bs.modal', function() {
+                    ensureModalOnTop(addBookModal);
+                });
+            }
+            
+            // Handle Swap Request Modal
+            const swapRequestModal = document.getElementById('swapRequestModal');
+            if (swapRequestModal) {
+                swapRequestModal.addEventListener('show.bs.modal', function() {
+                    closeAllDropdowns();
+                    setTimeout(() => {
+                        ensureModalOnTop(swapRequestModal);
+                    }, 10);
+                });
+                swapRequestModal.addEventListener('shown.bs.modal', function() {
+                    ensureModalOnTop(swapRequestModal);
+                });
+            }
+            
+            // Also close dropdowns when clicking modal trigger buttons (before modal opens)
+            document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    closeAllDropdowns();
+                }, true); // Use capture phase to run before Bootstrap's handler
+            });
+        });
+    </script>
     <script src="js/swap.js"></script>
 </body>
 </html>
