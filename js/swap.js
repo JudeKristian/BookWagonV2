@@ -539,7 +539,7 @@ function deleteBook(bookId) {
 function showLogisticsModal(requestId) {
     // Create and show the modal
     const modalHTML = `
-    <div class="modal fade" id="logisticsModal" tabindex="-1" aria-labelledby="logisticsModalLabel" aria-hidden="true">
+    <div class="modal fade" id="logisticsModal" tabindex="-1" aria-labelledby="logisticsModalLabel">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">

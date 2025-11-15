@@ -645,7 +645,7 @@ $photo = $_SESSION['profile_picture'] ?? '';
     </div>
 
     <!-- Add Book Modal -->
-    <div class="modal fade" id="addBookModal" tabindex="-1" aria-labelledby="addBookModalLabel" aria-hidden="true" data-bs-backdrop="true">
+    <div class="modal fade" id="addBookModal" tabindex="-1" aria-labelledby="addBookModalLabel" data-bs-backdrop="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -699,7 +699,7 @@ $photo = $_SESSION['profile_picture'] ?? '';
     </div>
 
     <!-- Swap Request Modal -->
-    <div class="modal fade" id="swapRequestModal" tabindex="-1" aria-labelledby="swapRequestModalLabel" aria-hidden="true" data-bs-backdrop="true">
+    <div class="modal fade" id="swapRequestModal" tabindex="-1" aria-labelledby="swapRequestModalLabel" data-bs-backdrop="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
