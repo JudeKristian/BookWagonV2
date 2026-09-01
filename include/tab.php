@@ -1,38 +1,87 @@
-<div class="container  pt-3">
-    <div class="tab-menu">
-      <a href="dashboard.php" >
-          <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-          </svg>
-          Home
-      </a>
-      <a href="rentbooks.php" class="active">  
-         <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-          </svg>
-          Rentbooks
-      </a>
-      <a href="explore.php">
-          <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-          </svg>
-          Forum
-      </a>
-      <a href="libraries.php">
-          <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            <line x1="12" y1="6" x2="12" y2="14"></line>
-            <rect x="9" y="6" width="6" height="3"></rect>
-          </svg>
-          Libraries
-      </a>
-      <a href="bookswap.php">
-          <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-            <path d="M21,9L17,5V8H10V10H17V13M7,11L3,15L7,19V16H14V14H7V11Z" />
-          </svg>
-          Bookswap
-      </a>
-    </div>
+<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
+<style>
+    .custom-nav-tabs {
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        padding: 0;
+        margin-top: 20px;
+        margin-bottom: 35px;
+        list-style: none !important;
+    }
+    
+    .custom-nav-tabs .nav-item {
+        list-style: none !important;
+        flex-grow: 1;
+        text-align: center;
+    }
+    
+    .custom-nav-tabs .nav-link {
+        color: #333333;
+        font-weight: 600;
+        font-size: 16px;
+        padding: 12px 15px;
+        border: none;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+        display: inline-block;
+        text-decoration: none;
+        letter-spacing: 0.2px;
+    }
+    
+    .custom-nav-tabs .nav-link:hover {
+        color: #f8a100;
+    }
+    
+    .custom-nav-tabs .nav-link.active {
+        color: #f8a100;
+        border-bottom: 2px solid #f8a100;
+    }
+    
+    /* Mobile responsive adjustments */
+    @media (max-width: 768px) {
+        .custom-nav-tabs {
+            overflow-x: auto;
+            justify-content: flex-start;
+            white-space: nowrap;
+            padding-bottom: 5px;
+        }
+        .custom-nav-tabs .nav-item {
+            flex-grow: 0;
+        }
+        .custom-nav-tabs .nav-link {
+            padding: 10px 15px;
+            font-size: 14px;
+        }
+    }
+</style>
+
+<div class="container">
+    <ul class="custom-nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link <?php echo ($current_page == 'home.php' || $current_page == 'dashboard.php') ? 'active' : ''; ?>" href="home.php">
+                Home
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?php echo ($current_page == 'rentbooks.php') ? 'active' : ''; ?>" href="rentbooks.php">
+                Rent Books
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?php echo ($current_page == 'explore.php') ? 'active' : ''; ?>" href="explore.php">
+                Explore
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?php echo ($current_page == 'libraries.php') ? 'active' : ''; ?>" href="libraries.php">
+                Libraries
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?php echo ($current_page == 'bookswap.php') ? 'active' : ''; ?>" href="bookswap.php">
+                Book Swap
+            </a>
+        </li>
+    </ul>
+</div>

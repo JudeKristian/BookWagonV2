@@ -205,13 +205,7 @@ if ($conn->connect_error) {
 
 <body>
 
-<?php 
-    if ($userType == 'user') {
-        include("include/user_header.php");
-    } elseif ($userType == 'seller') {
-        include("include/seller_header.php");
-    }
-    ?>
+<?php include("include/user_header.php"); ?>
 
 <?php include('include/tab.php'); ?>
 
@@ -433,6 +427,9 @@ if ($conn->connect_error) {
             </div>
         </div>
     </div>
+
+    <!-- BookWagon Global Footer -->
+    <?php include("include/footer.php"); ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>

@@ -156,12 +156,12 @@ $relatedPostsResult = $conn->query($relatedPostsQuery);
             --border-radius: 0.5rem;
             --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
             --transition: all 0.3s ease;
-            --forum-bg: #f9f7f4;
+            --forum-bg: #ffffff;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--forum-bg);
+            background-color: #ffffff;
             color: var(--text-color);
             line-height: 1.6;
         }
@@ -457,31 +457,19 @@ $relatedPostsResult = $conn->query($relatedPostsQuery);
     </style>
 </head>
 <body>
-    <?php 
-    if ($userType == 'user') {
-        include("include/user_header.php");
-    } elseif ($userType == 'seller') {
-        include("include/seller_header.php");
-    }
-    ?>
+    <?php include("include/user_header.php"); ?>
 
     <div class="container-fluid py-4">
         <div class="forum-container">
             <!-- Navigation tabs -->
-            <div class="tab-menu mb-4">
-                <a href="dashboard.php">Home</a>
-                <a href="rentbooks.php">Rentbooks</a>
-                <a href="explore.php" class="active">Forum</a>
-                <a href="libraries.php">Libraries</a>
-                <a href="bookswap.php">Bookswap</a>
-            </div>
+            <?php include('include/tab.php'); ?>
 
             <!-- Breadcrumb -->
             <div class="card mb-4 border-0 shadow-sm">
                 <div class="card-body p-2">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0 py-1">
-                            <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                            <li class="breadcrumb-item"><a href="home.php">Home</a></li>
                             <li class="breadcrumb-item"><a href="explore.php">Forum</a></li>
                             <li class="breadcrumb-item"><a href="explore.php?category=<?= $post['category_id'] ?>"><?= htmlspecialchars($post['category_name']) ?></a></li>
                             <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars(substr($post['title'], 0, 60)) ?><?= strlen($post['title']) > 60 ? '...' : '' ?></li>

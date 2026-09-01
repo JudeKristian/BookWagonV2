@@ -194,250 +194,54 @@ $stats = $statsResult->fetch_assoc();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Return Requests - BookWagon</title>
     
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
     <style>
-        :root {
-            --primary-color: #6366f1;
-            --primary-light: #818cf8;
-            --primary-dark: #4f46e5;
-            --secondary-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --info-color: #3b82f6;
-            --sidebar-width: 260px;
-            --topbar-height: 70px;
-            --card-border-radius: 12px;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f9fafb;
-            color: #374151;
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
         }
         
-        /* Sidebar styling */
-        .sidebar {
-            width: var(--sidebar-width);
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary-color) 100%);
-            box-shadow: var(--shadow-lg);
-            padding-top: var(--topbar-height);
-            z-index: 1000;
-            transition: all 0.3s ease;
-        }
-        
-        .sidebar-logo {
-            height: var(--topbar-height);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .sidebar-menu {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .sidebar-menu li {
-            padding: 12px 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: rgba(255, 255, 255, 0.8);
-            transition: all 0.3s ease;
-            margin-bottom: 5px;
-            border-radius: 0 50px 50px 0;
-        }
-        
-        .sidebar-menu li.active, 
-        .sidebar-menu li:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-            padding-left: 30px;
-        }
-        
-        .sidebar-menu li i {
-            width: 24px;
-            text-align: center;
-        }
-        
-        .sidebar-menu a {
-            color: inherit;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        /* Main content */
         .main-content {
-            margin-left: var(--sidebar-width);
             padding: 20px;
             min-height: 100vh;
         }
         
-        .topbar {
-            height: var(--topbar-height);
-            background-color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 25px;
-            box-shadow: var(--shadow-sm);
-            position: fixed;
-            top: 0;
-            left: var(--sidebar-width);
-            right: 0;
-            z-index: 999;
-        }
-        
-        .search-bar {
-            position: relative;
-            flex: 1;
-            max-width: 400px;
-            margin-right: 20px;
-        }
-        
-        .search-bar input {
-            width: 100%;
-            padding: 10px 20px;
-            padding-left: 40px;
-            border-radius: 50px;
-            border: 1px solid #e5e7eb;
-            background-color: #f9fafb;
-            transition: all 0.3s ease;
-        }
-        
-        .search-bar input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-            outline: none;
-        }
-        
-        .search-bar i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #9ca3af;
-        }
-        
-        .topbar-icons {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        .icon-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f9fafb;
-            color: #4b5563;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .icon-btn:hover {
-            background-color: #f3f4f6;
-            color: var(--primary-color);
-        }
-        
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            background-color: var(--primary-light);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-        }
-        
-        .user-info {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .user-name {
-            font-weight: 600;
-            font-size: 14px;
-            color: #1f2937;
-        }
-        
-        .user-role {
-            font-size: 12px;
-            color: #6b7280;
-        }
-        
-        .content-wrapper {
-            margin-top: calc(var(--topbar-height) + 20px);
-            padding: 10px;
-        }
-        
-        /* Stats cards */
+        /* Stats Container */
         .stats-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
         
         .stat-card {
             background-color: #ffffff;
-            border-radius: var(--card-border-radius);
-            padding: 20px;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.3s ease;
+            border-radius: 12px;
+            padding: 24px;
             display: flex;
             align-items: center;
-            overflow: hidden;
             position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+            border: 1px solid #e2e8f0;
+            transition: transform 0.3s, box-shadow 0.3s;
         }
         
         .stat-card:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
         }
         
         .stat-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 60px;
-            height: 60px;
             border-radius: 12px;
             margin-right: 15px;
             font-size: 24px;
@@ -1148,80 +952,12 @@ $stats = $statsResult->fetch_assoc();
     </div>
     <?php endif; ?>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-logo">
-            <img src="images/logo.png" alt="BookWagon" height="40">
-            <span class="ms-2 text-white fw-bold fs-5">BookWagon</span>
-        </div>
-        <ul class="sidebar-menu">
-            <li>
-                <i class="fas fa-th-large"></i>
-                <span><a href="dashboard.php" class="text-decoration-none text-inherit">Dashboard</a></span>
-            </li>
-            <li>
-                <i class="fas fa-book"></i>
-                <span><a href="manage_books.php" class="text-decoration-none text-inherit">Manage Books</a></span>
-            </li>
-            <li>
-                <i class="fas fa-shopping-cart"></i>
-                <span><a href="order.php" class="text-decoration-none text-inherit">Orders</a></span>
-            </li>
-            <li>
-                <i class="fas fa-exchange-alt"></i>
-                <span><a href="rentals.php" class="text-decoration-none text-inherit">Rentals</a></span>
-            </li>
-            <li class="active">
-                <i class="fas fa-undo-alt"></i>
-                <span>Return Requests</span>
-            </li>
-            <li>
-                <i class="fas fa-user-friends"></i>
-                <span><a href="renter.php" class="text-decoration-none text-inherit">Customers</a></span>
-            </li>
-            <li>
-                <i class="fas fa-chart-line"></i>
-                <span><a href="reports.php" class="text-decoration-none text-inherit">Reports</a></span>
-            </li>
-            <li>
-                <i class="fas fa-cog"></i>
-                <span><a href="settings.php" class="text-decoration-none text-inherit">Settings</a></span>
-            </li>
-        </ul>
-    </div>
+    <!-- Include the fixed sidebar -->
+    <?php include("include/seller_sidebar.php"); ?>
 
-    <!-- Topbar -->
-    <div class="topbar">
-        <div class="search-bar">
-            <i class="fas fa-search"></i>
-            <input type="text" placeholder="Search returns..." id="returnSearch">
-        </div>
-        <div class="topbar-icons">
-        <a href="dashboard.php" class="nav-link" title="Home">Home</a>
-            <button class="icon-btn" title="Notifications">
-                <i class="fas fa-bell"></i>
-            </button>
-            <button class="icon-btn" title="Messages">
-                <i class="fas fa-envelope"></i>
-            </button>
-            <div class="user-profile">
-                <div class="avatar">
-                    <?php echo substr(isset($_SESSION['firstname']) ? $_SESSION['firstname'] : $_SESSION['email'], 0, 1); ?>
-                </div>
-                <div class="user-info">
-                    <div class="user-name">
-                        <?php echo isset($_SESSION['firstname']) ? $_SESSION['firstname'] . ' ' . ($_SESSION['lastname'] ?? '') : $_SESSION['email']; ?>
-                    </div>
-                    <div class="user-role">Seller</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
+    <!-- Main Content wrapper matching the sidebar layout -->
     <div class="main-content">
-        <div class="content-wrapper">
-            <div class="container-fluid">
+        <div class="page-content">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2 class="mb-0">Return Requests</h2>
                     <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exportDataModal">

@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS books (
     title VARCHAR(255) NOT NULL,
     author VARCHAR(255) NOT NULL,
     description TEXT,
-    condition ENUM('New', 'Like New', 'Good', 'Fair') NOT NULL,
+    `condition` ENUM('New', 'Like New', 'Good', 'Fair') NOT NULL,
     image_path VARCHAR(255),
     status ENUM('available', 'swapped', 'removed') DEFAULT 'available',
     owner_id INT NOT NULL,

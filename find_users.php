@@ -338,13 +338,7 @@ while ($row = $result->fetch_assoc()) {
     </style>
 </head>
 <body>
-    <?php 
-    if ($userType == 'user') {
-        include("include/user_header.php");
-    } elseif ($userType == 'seller') {
-        include("include/seller_header.php");
-    }
-    ?>
+    <?php include("include/user_header.php"); ?>
     
     <!-- Loading indicator -->
     <div class="loading-indicator" id="loadingIndicator">

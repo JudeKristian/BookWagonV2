@@ -2,13 +2,22 @@
 include("session.php");
 include("connect.php");
 
-// Get all notifications for the current user
+// Determine mode: 'seller' or 'buyer' (default)
+$mode = isset($_GET['mode']) && $_GET['mode'] === 'seller' ? 'seller' : 'buyer';
+
+// Define which notification types belong to each mode
+$buyerTypes = ['buddy_request', 'buddy_accepted', 'order_shipped', 'order_delivered', 'rental_approved', 'rental_due', 'payment_confirmed'];
+$sellerTypes = ['order_placed', 'order_update', 'rental_request', 'return_request', 'book_review', 'new_inquiry'];
+$activeTypes = $mode === 'seller' ? $sellerTypes : $buyerTypes;
+$typeList = "'" . implode("','", $activeTypes) . "'";
+
+// Get notifications for the current user filtered by mode
 $notifications = [];
 if(isset($_SESSION['id'])) {
     $notifQuery = "SELECT n.id, n.sender_id, n.type, n.content, n.is_read, n.created_at, u.firstname, u.lastname, u.profile_picture 
                   FROM notifications n 
                   LEFT JOIN users u ON n.sender_id = u.id 
-                  WHERE n.user_id = ? 
+                  WHERE n.user_id = ? AND n.type IN ($typeList)
                   ORDER BY n.created_at DESC 
                   LIMIT 50";
     $stmt = $conn->prepare($notifQuery);
@@ -20,25 +29,45 @@ if(isset($_SESSION['id'])) {
     }
 }
 
-// Mark all as read if requested
+// Mark all as read if requested (only for current mode's types)
 if(isset($_GET['mark_all_read']) && $_GET['mark_all_read'] == 1) {
-    $updateQuery = "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0";
+    $updateQuery = "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0 AND type IN ($typeList)";
     $stmt = $conn->prepare($updateQuery);
     $stmt->bind_param("i", $_SESSION['id']);
     $stmt->execute();
     
-    // Redirect to remove the query parameter
-    header("Location: notifications.php");
+    // Redirect to remove the query parameter but keep mode
+    header("Location: notifications.php?mode=$mode");
     exit();
 }
 
 // Helper function to determine the notification URL based on type
 function getNotificationUrl($notification) {
     switch ($notification['type']) {
+        // Buyer types
         case 'buddy_request':
-            return 'profile.php?id=' . $_SESSION['id']; // Show own profile with requests
+            return 'profile.php?id=' . $_SESSION['id'];
         case 'buddy_accepted':
-            return 'profile.php?id=' . $notification['sender_id']; // Show the sender's profile
+            return 'profile.php?id=' . $notification['sender_id'];
+        case 'order_shipped':
+        case 'order_delivered':
+        case 'payment_confirmed':
+            return 'history.php';
+        case 'rental_approved':
+        case 'rental_due':
+            return 'rented_books.php';
+        // Seller types
+        case 'order_placed':
+        case 'order_update':
+            return 'order.php';
+        case 'rental_request':
+            return 'renter.php';
+        case 'return_request':
+            return 'rental_request.php';
+        case 'new_inquiry':
+            return 'messages.php';
+        case 'book_review':
+            return 'Manage_books.php';
         default:
             return '#';
     }
@@ -274,15 +303,19 @@ foreach($notifications as $notification) {
 <body>
     <?php 
     $userType = $_SESSION['usertype'] ?? '';
-    if ($userType == 'user') {
-        include("include/user_header.php");
-    } elseif ($userType == 'seller') {
-        include("include/seller_header.php");
-    }
+    include("include/user_header.php");
     ?>
 
     <div class="container notifications-container">
-        <h1 class="page-title">Notifications</h1>
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <h1 class="page-title mb-0">Notifications</h1>
+            <div class="d-flex gap-2">
+                <a href="notifications.php?mode=buyer" class="btn btn-sm <?php echo $mode === 'buyer' ? 'btn-warning' : 'btn-outline-secondary'; ?> rounded-pill" style="font-size: 12px; font-weight: 600;"><i class="fa-solid fa-user me-1"></i> Buyer</a>
+                <?php if (isset($_SESSION['usertype']) && $_SESSION['usertype'] === 'seller'): ?>
+                <a href="notifications.php?mode=seller" class="btn btn-sm <?php echo $mode === 'seller' ? 'btn-dark' : 'btn-outline-secondary'; ?> rounded-pill" style="font-size: 12px; font-weight: 600;"><i class="fa-solid fa-gauge me-1"></i> Seller</a>
+                <?php endif; ?>
+            </div>
+        </div>
         
         <div class="card">
             <div class="card-header">
@@ -293,7 +326,7 @@ foreach($notifications as $notification) {
                     <?php endif; ?>
                 </h5>
                 <?php if(count($notifications) > 0): ?>
-                <a href="notifications.php?mark_all_read=1" class="mark-all-btn">Mark all as read</a>
+                <a href="notifications.php?mark_all_read=1&mode=<?php echo $mode; ?>" class="mark-all-btn">Mark all as read</a>
                 <?php endif; ?>
             </div>
             

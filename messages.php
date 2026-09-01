@@ -590,13 +590,7 @@ function timeAgo($dateString) {
     </style>
 </head>
 <body>
-    <?php 
-    if ($userType == 'user') {
-        include("include/user_header.php");
-    } elseif ($userType == 'seller') {
-        include("include/seller_header.php");
-    }
-    ?>
+    <?php include("include/user_header.php"); ?>
 
     <div class="container messages-container mt-4">
         <div class="row h-100">

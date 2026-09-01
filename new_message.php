@@ -238,13 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && !empty(
     </style>
 </head>
 <body>
-    <?php 
-    if ($userType == 'user') {
-        include("include/user_header.php");
-    } elseif ($userType == 'seller') {
-        include("include/seller_header.php");
-    }
-    ?>
+    <?php include("include/user_header.php"); ?>
 
     <div class="container">
         <a href="messages.php" class="back-link">

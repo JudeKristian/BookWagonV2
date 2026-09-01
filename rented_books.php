@@ -807,7 +807,9 @@ $highlightRentalId = isset($_GET['highlight_rental']) ? intval($_GET['highlight_
             background-color: #f8f9fa;
             border-radius: 10px;
             padding: 20px 0;
-            height: 100%;
+            min-height: calc(100vh - 150px);
+            position: sticky;
+            top: 20px;
         }
         
         .sidebar-link {
@@ -856,13 +858,7 @@ $highlightRentalId = isset($_GET['highlight_rental']) ? intval($_GET['highlight_
 </head>
 <body>
     <!-- Include Header -->
-    <?php 
-    if ($userType == 'user') {
-        include("include/user_header.php");
-    } elseif ($userType == 'seller') {
-        include("include/seller_header.php");
-    }
-    ?>
+    <?php include("include/user_header.php"); ?>
 
     <div class="container py-5">
         <div class="row">
@@ -883,7 +879,10 @@ $highlightRentalId = isset($_GET['highlight_rental']) ? intval($_GET['highlight_
                         <i class="fa-solid fa-bookmark"></i> My Collections
                     </a>
                     <a href="history.php" class="sidebar-link">
-                        <i class="fa-solid fa-clock-rotate-left"></i> History
+                        <i class="fa-solid fa-clock-rotate-left"></i> Order History
+                    </a>
+                    <a href="security.php" class="sidebar-link">
+                        <i class="fa-solid fa-shield-halved"></i> Security Settings
                     </a>
                 </div>
             </div>

@@ -520,7 +520,7 @@ $userType = $_SESSION['usertype'] ?? '';
             </div>
             
             <div class="cta-container">
-                <a href="dashboard.php?new_user=1" class="btn btn-primary">Start Your Journey</a>
+                <a href="home.php?new_user=1" class="btn btn-primary">Start Your Journey</a>
             </div>
         </div>
     </div>
@@ -618,9 +618,9 @@ $userType = $_SESSION['usertype'] ?? '';
             }
         });
         
-        // Automatically redirect to dashboard after 25 seconds with new_user parameter
+        // Automatically redirect to home after 25 seconds with new_user parameter
         setTimeout(function() {
-            window.location.href = "dashboard.php?new_user=1";
+            window.location.href = "home.php?new_user=1";
         }, 25000);
     </script>
 </body>

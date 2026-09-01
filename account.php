@@ -238,7 +238,9 @@ $tax_id = $user['tax_id'] ?? '';
             background-color: #f8f9fa;
             border-radius: 10px;
             padding: 20px 0;
-            height: 100%;
+            min-height: calc(100vh - 150px);
+            position: sticky;
+            top: 20px;
         }
         
         .sidebar-link {
@@ -265,13 +267,7 @@ $tax_id = $user['tax_id'] ?? '';
 </head>
 <body>
     <!-- Include Header -->
-    <?php 
-    if ($userType == 'user') {
-        include("include/user_header.php");
-    } elseif ($userType == 'seller') {
-        include("include/seller_header.php");
-    }
-    ?>
+    <?php include("include/user_header.php"); ?>
 
     <div class="container py-5">
         <div class="row">
@@ -292,7 +288,10 @@ $tax_id = $user['tax_id'] ?? '';
                         <i class="fa-solid fa-bookmark"></i> My Collections
                     </a>
                     <a href="history.php" class="sidebar-link">
-                        <i class="fa-solid fa-clock-rotate-left"></i> History
+                        <i class="fa-solid fa-clock-rotate-left"></i> Order History
+                    </a>
+                    <a href="security.php" class="sidebar-link">
+                        <i class="fa-solid fa-shield-halved"></i> Security Settings
                     </a>
                 </div>
             </div>
@@ -324,7 +323,13 @@ $tax_id = $user['tax_id'] ?? '';
                 <div class="profile-card">
                     <div class="d-flex">
                         <div class="profile-picture-container">
-                            <img src="<?php echo $profilePicture; ?>" alt="Profile Picture" class="profile-picture">
+                            <?php if(!empty($user['profile_picture']) && file_exists($user['profile_picture'])): ?>
+                                <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture" class="profile-picture" style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%;">
+                            <?php else: ?>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white fw-bold shadow-sm" style="width: 80px; height: 80px; font-size: 32px;">
+                                    <?php echo strtoupper(substr($user['firstname'] ?? 'U', 0, 1)); ?>
+                                </div>
+                            <?php endif; ?>
                             <div class="edit-picture" data-bs-toggle="modal" data-bs-target="#uploadPictureModal">
                                 <i class="fas fa-camera"></i>
                             </div>

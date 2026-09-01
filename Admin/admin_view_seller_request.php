@@ -96,264 +96,297 @@ if(isset($_POST['action'])) {
         }
     }
 }
+
+// Get pending count for sidebar badge
+$pendingSellers = 0;
+$res = $conn->query("SELECT COUNT(*) as cnt FROM sellers WHERE status = 'pending'");
+if ($res && $row = $res->fetch_assoc()) $pendingSellers = $row['cnt'];
 ?>
- 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Seller Request - BookWagon Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-        .dashboard-container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #333;
-            color: white;
-            padding: 15px 30px;
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
             margin-bottom: 30px;
-        }
-        .welcome-msg {
-            margin: 0;
-        }
-        .btn {
-            display: inline-block;
-            padding: 8px 15px;
-            border-radius: 4px;
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
-            font-size: 14px;
-        }
-        .btn-back {
-            background-color: #6c757d;
-            color: white;
-        }
-        .btn-back:hover {
-            background-color: #5a6268;
-        }
-        .logout-btn {
-            background-color: #e74c3c;
-            color: white;
-        }
-        .logout-btn:hover {
-            background-color: #c0392b;
-        }
-        .dashboard-content {
-            background-color: white;
-            padding: 30px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h2 {
-            color: #333;
-            border-bottom: 2px solid #f4f4f4;
-            padding-bottom: 10px;
-            margin-top: 0;
-        }
-        .alert {
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-        }
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .seller-details {
-            margin-top: 20px;
         }
         .detail-section {
-            margin-bottom: 30px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
         }
-        .section-title {
-            font-size: 18px;
+        .detail-section h4 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
             font-weight: 600;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #eee;
+            color: var(--text-dark);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
         }
         .detail-row {
             display: flex;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .detail-row:last-child {
+            margin-bottom: 0;
         }
         .detail-label {
-            width: 200px;
+            width: 130px;
+            color: var(--text-muted);
             font-weight: 500;
-            color: #555;
         }
         .detail-value {
             flex: 1;
+            color: var(--text-dark);
+            font-weight: 500;
         }
-        .status {
-            padding: 6px 10px;
-            border-radius: 20px;
-            font-size: 14px;
-            display: inline-block;
+        .shop-logo-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+            margin-bottom: 16px;
         }
-        .status-pending {
-            background-color: #fef9e7;
-            color: #f39c12;
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 600;
         }
-        .status-approved {
-            background-color: #e9f7ef;
-            color: #27ae60;
+        .status-badge.pending { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+        .status-badge.approved { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+        .status-badge.rejected { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        
+        .doc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
         }
-        .status-rejected {
-            background-color: #fdedec;
-            color: #e74c3c;
+        .doc-card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            background: #fafafa;
         }
-        .shop-logo {
-            max-width: 200px;
-            max-height: 200px;
-            margin-top: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 5px;
+        .doc-card img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s;
         }
-        .actions {
-            margin-top: 30px;
+        .doc-card img:hover {
+            transform: scale(1.02);
+        }
+        .doc-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        .doc-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .action-buttons {
             display: flex;
-            gap: 10px;
+            gap: 12px;
+            margin-top: 30px;
         }
         .btn-approve {
-            background-color: #27ae60;
-            color: white;
+            background: #10b981;
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .btn-approve:hover {
-            background-color: #219955;
-        }
+        .btn-approve:hover { background: #059669; }
         .btn-reject {
-            background-color: #e74c3c;
-            color: white;
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .btn-reject:hover {
-            background-color: #c0392b;
-        }
+        .btn-reject:hover { background: #dc2626; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="welcome-msg">View Seller Request</div>
-        <div>
-            <a href="admin_seller_requests.php" class="btn btn-back">Back to Requests</a>
-            <a href="logout.php" class="btn logout-btn">Sign Out</a>
+
+    <?php include "admin_sidebar.php"; ?>
+
+    <main class="main-content">
+        <div class="topbar">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+                <div class="topbar-title">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <a href="admin_seller_requests.php" style="color: var(--text-muted);"><i class="fa-solid fa-arrow-left"></i></a>
+                        <h1>Review Seller Request</h1>
+                    </div>
+                    <p>Review documents and approve or reject this application</p>
+                </div>
+            </div>
         </div>
-    </div>
-    
-    <div class="dashboard-container">
-        <div class="dashboard-content">
-            <h2>Seller Request Details</h2>
-            
+
+        <div class="page-content">
             <?php if(isset($success_message)): ?>
-                <div class="alert alert-success"><?php echo $success_message; ?></div>
+                <div class="alert-bar success" style="margin-bottom: 20px;"><i class="fa-solid fa-check-circle" style="margin-right: 6px;"></i><?php echo $success_message; ?></div>
             <?php endif; ?>
             
             <?php if(isset($error_message)): ?>
-                <div class="alert alert-danger"><?php echo $error_message; ?></div>
+                <div class="alert-bar error" style="margin-bottom: 20px;"><i class="fa-solid fa-exclamation-circle" style="margin-right: 6px;"></i><?php echo $error_message; ?></div>
             <?php endif; ?>
-            
-            <div class="seller-details">
-                <div class="detail-section">
-                    <div class="section-title">Request Status</div>
-                    <div class="detail-row">
-                        <div class="detail-label">Status:</div>
-                        <div class="detail-value">
-                            <?php if($seller['status'] == 'pending'): ?>
-                                <span class="status status-pending">Pending</span>
-                            <?php elseif($seller['status'] == 'approved'): ?>
-                                <span class="status status-approved">Approved</span>
-                            <?php elseif($seller['status'] == 'rejected'): ?>
-                                <span class="status status-rejected">Rejected</span>
-                            <?php endif; ?>
+
+            <div class="content-card" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <?php if(!empty($seller['shop_logo']) && file_exists('../' . $seller['shop_logo'])): ?>
+                        <img src="../<?php echo $seller['shop_logo']; ?>" alt="Logo" class="shop-logo-large">
+                    <?php else: ?>
+                        <div class="shop-logo-large" style="display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #94a3b8; font-size: 24px;">
+                            <i class="fa-solid fa-store"></i>
                         </div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">Request Date:</div>
-                        <div class="detail-value"><?php echo date('F d, Y - h:i A', strtotime($seller['created_at'])); ?></div>
+                    <?php endif; ?>
+                    <div>
+                        <h2 style="margin: 0 0 6px 0; font-size: 20px; color: var(--text-dark);"><?php echo htmlspecialchars($seller['shop_name']); ?></h2>
+                        <div style="color: var(--text-muted); font-size: 14px; margin-bottom: 8px;">Applied on <?php echo date('M d, Y', strtotime($seller['created_at'])); ?></div>
+                        <span class="status-badge <?php echo $seller['status']; ?>">
+                            <?php if($seller['status'] == 'pending') echo '<i class="fa-solid fa-clock"></i> Pending Review'; ?>
+                            <?php if($seller['status'] == 'approved') echo '<i class="fa-solid fa-check"></i> Approved'; ?>
+                            <?php if($seller['status'] == 'rejected') echo '<i class="fa-solid fa-xmark"></i> Rejected'; ?>
+                        </span>
                     </div>
                 </div>
                 
-                <div class="detail-section">
-                    <div class="section-title">Shop Information</div>
-                    <div class="detail-row">
-                        <div class="detail-label">Shop Name:</div>
-                        <div class="detail-value"><?php echo htmlspecialchars($seller['shop_name']); ?></div>
+                <?php if($seller['status'] == 'pending'): ?>
+                    <div class="action-buttons" style="margin: 0;">
+                        <form method="post" action="" style="display: inline;">
+                            <input type="hidden" name="action" value="approve">
+                            <button type="submit" class="btn-approve" onclick="return confirm('Are you sure you want to approve this seller request?')"><i class="fa-solid fa-check me-2"></i> Approve</button>
+                        </form>
+                        <form method="post" action="" style="display: inline;">
+                            <input type="hidden" name="action" value="reject">
+                            <button type="submit" class="btn-reject" onclick="return confirm('Are you sure you want to reject this seller request?')"><i class="fa-solid fa-xmark me-2"></i> Reject</button>
+                        </form>
                     </div>
-                    <div class="detail-row">
-                        <div class="detail-label">Shop Logo:</div>
-                        <div class="detail-value">
-                            <?php if(!empty($seller['shop_logo']) && file_exists($seller['shop_logo'])): ?>
-                                <img src="<?php echo $seller['shop_logo']; ?>" alt="Shop Logo" class="shop-logo">
-                            <?php else: ?>
-                                <span>No logo uploaded</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                
+                <?php endif; ?>
+            </div>
+
+            <div class="detail-grid">
                 <div class="detail-section">
-                    <div class="section-title">User Information</div>
+                    <h4><i class="fa-solid fa-user" style="color: var(--primary); margin-right: 8px;"></i> Owner Information</h4>
                     <div class="detail-row">
                         <div class="detail-label">Full Name:</div>
-                        <div class="detail-value">
-                            <?php 
-                                $fullName = $seller['first_name'];
-                                if(!empty($seller['middle_name'])) {
-                                    $fullName .= ' ' . $seller['middle_name'];
-                                }
-                                $fullName .= ' ' . $seller['last_name'];
-                                echo htmlspecialchars($fullName); 
-                            ?>
-                        </div>
+                        <div class="detail-value"><?php echo htmlspecialchars(trim($seller['first_name'] . ' ' . $seller['middle_name'] . ' ' . $seller['last_name'])); ?></div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">Email:</div>
                         <div class="detail-value"><?php echo htmlspecialchars($seller['email']); ?></div>
                     </div>
                     <div class="detail-row">
-                        <div class="detail-label">Username:</div>
-                        <div class="detail-value"><?php echo htmlspecialchars($seller['username']); ?></div>
+                        <div class="detail-label">Phone:</div>
+                        <div class="detail-value"><?php echo htmlspecialchars($seller['business_phone'] ?? 'N/A'); ?></div>
                     </div>
                     <div class="detail-row">
-                        <div class="detail-label">Account Created:</div>
-                        <div class="detail-value"><?php echo date('F d, Y', strtotime($seller['user_created_at'])); ?></div>
+                        <div class="detail-label">Member Since:</div>
+                        <div class="detail-value"><?php echo date('M d, Y', strtotime($seller['user_created_at'])); ?></div>
                     </div>
                 </div>
-                
-                <?php if($seller['status'] == 'pending'): ?>
-                    <div class="actions">
-                        <form method="post" action="" style="display: inline;">
-                            <input type="hidden" name="action" value="approve">
-                            <button type="submit" class="btn btn-approve" onclick="return confirm('Are you sure you want to approve this seller request?')">Approve Request</button>
-                        </form>
-                        
-                        <form method="post" action="" style="display: inline;">
-                            <input type="hidden" name="action" value="reject">
-                            <button type="submit" class="btn btn-reject" onclick="return confirm('Are you sure you want to reject this seller request?')">Reject Request</button>
-                        </form>
+
+                <div class="detail-section">
+                    <h4><i class="fa-solid fa-location-dot" style="color: var(--primary); margin-right: 8px;"></i> Location & Address</h4>
+                    <div class="detail-row">
+                        <div class="detail-label">Region/City:</div>
+                        <div class="detail-value"><?php echo htmlspecialchars($seller['location'] ?? 'N/A'); ?></div>
                     </div>
-                <?php endif; ?>
+                    <div class="detail-row">
+                        <div class="detail-label">Full Address:</div>
+                        <div class="detail-value"><?php echo htmlspecialchars($seller['address'] ?? 'N/A'); ?></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Zip Code:</div>
+                        <div class="detail-value"><?php echo htmlspecialchars($seller['zip_code'] ?? 'N/A'); ?></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; color: var(--text-dark); border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                    <i class="fa-solid fa-id-card" style="color: var(--primary); margin-right: 8px;"></i> Verification Documents
+                </h3>
+                
+                <div class="doc-grid">
+                    <div class="doc-card">
+                        <?php if (!empty($seller['primary_id_front']) && file_exists('../' . $seller['primary_id_front'])): ?>
+                            <a href="../<?php echo $seller['primary_id_front']; ?>" target="_blank">
+                                <img src="../<?php echo $seller['primary_id_front']; ?>" alt="Primary ID Front">
+                            </a>
+                        <?php else: ?>
+                            <div style="height: 140px; background: #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #94a3b8; margin-bottom: 12px;">No Image</div>
+                        <?php endif; ?>
+                        <div class="doc-title">Primary ID (Front)</div>
+                        <div class="doc-subtitle"><?php echo htmlspecialchars($seller['primary_id_type'] ?? 'ID'); ?></div>
+                    </div>
+
+                    <div class="doc-card">
+                        <?php if (!empty($seller['primary_id_back']) && file_exists('../' . $seller['primary_id_back'])): ?>
+                            <a href="../<?php echo $seller['primary_id_back']; ?>" target="_blank">
+                                <img src="../<?php echo $seller['primary_id_back']; ?>" alt="Primary ID Back">
+                            </a>
+                        <?php else: ?>
+                            <div style="height: 140px; background: #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #94a3b8; margin-bottom: 12px;">No Image</div>
+                        <?php endif; ?>
+                        <div class="doc-title">Primary ID (Back)</div>
+                        <div class="doc-subtitle"><?php echo htmlspecialchars($seller['primary_id_type'] ?? 'ID'); ?></div>
+                    </div>
+
+                    <div class="doc-card">
+                        <?php if (!empty($seller['secondary_id_front']) && file_exists('../' . $seller['secondary_id_front'])): ?>
+                            <a href="../<?php echo $seller['secondary_id_front']; ?>" target="_blank">
+                                <img src="../<?php echo $seller['secondary_id_front']; ?>" alt="Secondary ID Front">
+                            </a>
+                        <?php else: ?>
+                            <div style="height: 140px; background: #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #94a3b8; margin-bottom: 12px;">No Image</div>
+                        <?php endif; ?>
+                        <div class="doc-title">Secondary ID (Front)</div>
+                        <div class="doc-subtitle"><?php echo htmlspecialchars($seller['secondary_id_type'] ?? 'ID'); ?></div>
+                    </div>
+
+                    <div class="doc-card">
+                        <?php if (!empty($seller['selfie_image']) && file_exists('../' . $seller['selfie_image'])): ?>
+                            <a href="../<?php echo $seller['selfie_image']; ?>" target="_blank">
+                                <img src="../<?php echo $seller['selfie_image']; ?>" alt="Selfie">
+                            </a>
+                        <?php else: ?>
+                            <div style="height: 140px; background: #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #94a3b8; margin-bottom: 12px;">No Image</div>
+                        <?php endif; ?>
+                        <div class="doc-title">Selfie Verification</div>
+                        <div class="doc-subtitle">Identity Match</div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    </main>
 </body>
 </html>

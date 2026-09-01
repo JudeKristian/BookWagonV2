@@ -1,79 +1,131 @@
 <?php
+// Initialize session
+session_start();
+
 // Database configuration
-$db_host = "localhost";      // Usually "localhost" for local development
-$db_user = "root";           // Database username (default is "root" for XAMPP/MAMP)
-$db_pass = "";               // Database password (often empty for local development)
-$db_name = "bookwagon_db";   // Your database name
+$db_host = "localhost";
+$db_user = "root";
+$db_pass = "";
+$db_name = "bookwagon_db";
 
 // Create connection
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 
 // Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    error_log("Connection failed: " . $conn->connect_error);
+    die("System error: Unable to connect to the database. Please try again later.");
 }
 
+// Include audit logger
+require_once 'includes/audit_logger.php';
+
 // Initialize variables
-$firstname = $middlename = $lastname = $email = $password = $confirm_password = "";
-$firstname_err = $lastname_err = $email_err = $password_err = $confirm_password_err = $signup_err = "";
+$firstName = $lastName = $email = $confirm_email = $password = $confirm_password = "";
+$firstName_err = $lastName_err = $email_err = $confirm_email_err = $password_err = $confirm_password_err = $captcha_err = $signup_err = "";
 
 // Processing form data when form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
-    // Validate firstname
+    // 1. Google reCAPTCHA Validation
+    if (empty($_POST['g-recaptcha-response'])) {
+        $captcha_err = "Please check the 'I'm not a robot' checkbox.";
+    } else {
+        $recaptcha_secret = '6LcndJktAAAAACj2R6ryalgZG2dBaKfeIfZ50Yp4';
+        $recaptcha_response = $_POST['g-recaptcha-response'];
+        
+        // Make the API call to Google
+        $recaptcha_url = "https://www.google.com/recaptcha/api/siteverify";
+        
+        // Use stream_context to make POST request securely
+        $options = array(
+            'http' => array(
+                'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+                'method'  => 'POST',
+                'content' => http_build_query(array(
+                    'secret' => $recaptcha_secret,
+                    'response' => $recaptcha_response
+                ))
+            )
+        );
+        $context  = stream_context_create($options);
+        $recaptcha_verify = file_get_contents($recaptcha_url, false, $context);
+        $recaptcha_data = json_decode($recaptcha_verify);
+        
+        if (!$recaptcha_data->success) {
+            $captcha_err = "reCAPTCHA verification failed. Please try again.";
+        }
+    }
+    
+    // 2. Validate firstName
     if (empty(trim($_POST["firstname"]))) {
-        $firstname_err = "Please enter your first name.";
+        $firstName_err = "Please enter your first name.";
+    } elseif (!preg_match("/^[a-zA-Z\s]+$/", trim($_POST["firstname"]))) {
+        $firstName_err = "Name can only contain letters and spaces.";
     } else {
-        $firstname = trim($_POST["firstname"]);
+        $firstName = htmlspecialchars(trim($_POST["firstname"]), ENT_QUOTES, 'UTF-8');
     }
     
-    // Middle name is optional, just get it if provided
-    $middlename = trim($_POST["middlename"]);
-    
-    // Validate lastname
+    // 3. Validate lastName
     if (empty(trim($_POST["lastname"]))) {
-        $lastname_err = "Please enter your last name.";
+        $lastName_err = "Please enter your last name.";
+    } elseif (!preg_match("/^[a-zA-Z\s]+$/", trim($_POST["lastname"]))) {
+        $lastName_err = "Name can only contain letters and spaces.";
     } else {
-        $lastname = trim($_POST["lastname"]);
+        $lastName = htmlspecialchars(trim($_POST["lastname"]), ENT_QUOTES, 'UTF-8');
     }
     
-    // Validate email
+    // 4. Validate email
     if (empty(trim($_POST["email"]))) {
         $email_err = "Please enter your email.";
+    } elseif (!filter_var(trim($_POST["email"]), FILTER_VALIDATE_EMAIL)) {
+        $email_err = "Please enter a valid email format.";
     } else {
         // Prepare a select statement to check if email already exists
         $sql = "SELECT id FROM users WHERE email = ?";
-        
         if ($stmt = $conn->prepare($sql)) {
             $stmt->bind_param("s", $param_email);
             $param_email = trim($_POST["email"]);
-            
             if ($stmt->execute()) {
                 $stmt->store_result();
-                
                 if ($stmt->num_rows > 0) {
                     $email_err = "This email is already taken.";
                 } else {
                     $email = trim($_POST["email"]);
                 }
             } else {
-                echo "Oops! Something went wrong. Please try again later.";
+                $signup_err = "Oops! Something went wrong. Please try again later.";
             }
-            
             $stmt->close();
         }
     }
     
-    // Validate password
+    // 5. Validate confirm email
+    if (empty(trim($_POST["confirm_email"]))) {
+        $confirm_email_err = "Please confirm your email.";
+    } else {
+        $confirm_email = trim($_POST["confirm_email"]);
+        if (empty($email_err) && ($email != $confirm_email)) {
+            $confirm_email_err = "Email addresses do not match.";
+        }
+    }
+    
+    // 6. Validate password (Complexity)
     if (empty(trim($_POST["password"]))) {
         $password_err = "Please enter a password.";     
-    } elseif (strlen(trim($_POST["password"])) < 6) {
-        $password_err = "Password must have at least 6 characters.";
+    } elseif (strlen(trim($_POST["password"])) < 8) {
+        $password_err = "Password must have at least 8 characters.";
+    } elseif (!preg_match("/[A-Z]/", trim($_POST["password"]))) {
+        $password_err = "Password must contain at least one uppercase letter.";
+    } elseif (!preg_match("/[0-9]/", trim($_POST["password"]))) {
+        $password_err = "Password must contain at least one number.";
+    } elseif (!preg_match("/[\W]/", trim($_POST["password"]))) {
+        $password_err = "Password must contain at least one special character.";
     } else {
         $password = trim($_POST["password"]);
     }
     
-    // Validate confirm password
+    // 7. Validate confirm password
     if (empty(trim($_POST["confirm_password"]))) {
         $confirm_password_err = "Please confirm password.";     
     } else {
@@ -84,30 +136,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     
     // Check input errors before inserting into database
-    if (empty($firstname_err) && empty($lastname_err) && empty($email_err) && empty($password_err) && empty($confirm_password_err)) {
+    if (empty($firstName_err) && empty($lastName_err) && empty($email_err) && empty($confirm_email_err) && empty($password_err) && empty($confirm_password_err) && empty($captcha_err)) {
         
-        // Prepare an insert statement
-        $sql = "INSERT INTO users (firstname, middlename, lastname, email, password, usertype) VALUES (?, ?, ?, ?, ?, ?)";
+        // Prepare an insert statement (Removed middle name)
+        $sql = "INSERT INTO users (firstName, lastName, email, password) VALUES (?, ?, ?, ?)";
          
         if ($stmt = $conn->prepare($sql)) {
             // Bind variables to the prepared statement as parameters
-            $stmt->bind_param("ssssss", $param_firstname, $param_middlename, $param_lastname, $param_email, $param_password, $param_usertype);
+            $stmt->bind_param("ssss", $param_firstname, $param_lastname, $param_email, $param_password);
             
             // Set parameters
-            $param_firstname = $firstname;
-            $param_middlename = $middlename;
-            $param_lastname = $lastname;
+            $param_firstname = $firstName;
+            $param_lastname = $lastName;
             $param_email = $email;
             $param_password = password_hash($password, PASSWORD_DEFAULT); // Creates a password hash
-            $param_usertype = "user"; // Set default user type
             
             // Attempt to execute the prepared statement
             if ($stmt->execute()) {
-                // Set a flag for the login page to know this is a new user
-                echo "<script>
-                alert('Account created successfully!');
-                window.location.href = 'login.php?new_user=1';
-            </script>";
+                $new_user_id = $stmt->insert_id;
+                // Log successful registration
+                log_activity($new_user_id, 'Registration', 'New user registered.');
+                
+                // Redirect to login page
+                header("location: login.php");
             } else {
                 $signup_err = "Something went wrong. Please try again later.";
             }
@@ -127,767 +178,58 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BookWagon - Sign Up</title>
+    <title>BookWagon - Create Account</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons for Eye toggle -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Google reCAPTCHA script -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         :root {
-            --primary-color: #f8b079;
-            --primary-light: #ffd0b1;
-            --primary-dark: #e69c68;
-            --secondary-color: #f8fafc;
-            --accent-color: #6366f1; /* Indigo */
-            --text-dark: #1e293b;
-            --text-light: #64748b;
-            --text-muted: #94a3b8;
-            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --primary-color: #f8a100;
+            --secondary-color: #f8f9fa;
+            --accent-blue: #5b6bff;
+            --bg-cream: #faebc8;
         }
         
-        body {
-            background: linear-gradient(135deg, #f0f4ff 0%, #eef1ff 100%);
-            font-family: 'Poppins', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            color: var(--text-dark);
-            position: relative;
-            overflow-x: hidden;
-            padding: 40px 0;
-        }
+        body { background-color: #f8f9fa; font-family: 'Arial', sans-serif; }
+        .signup-container { max-width: 1000px; margin: 40px auto; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); background: white; }
+        .signup-row { display: flex; min-height: 650px; }
+        .signup-image { flex: 0.8; background-color: var(--bg-cream); position: relative; overflow: hidden; }
+        .signup-form { flex: 1.2; padding: 40px 50px; display: flex; flex-direction: column; justify-content: center; }
+        .logo { text-align: center; margin-bottom: 20px; }
+        .logo img { height: 100px; }
+        h2 { font-weight: 600; text-align: center; margin-bottom: 30px; }
+        .form-control { height: 50px; padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; }
+        .form-group { margin-bottom: 20px; }
+        .btn-signup { height: 50px; background-color: var(--primary-color); border: none; border-radius: 8px; font-weight: 600; font-size: 18px; margin-top: 10px; }
+        .btn-signup:hover { background-color: #e09000; }
+        .form-divider { text-align: center; position: relative; margin: 30px 0; }
+        .form-divider::before, .form-divider::after { content: ""; position: absolute; top: 50%; width: 45%; height: 1px; background-color: #ddd; }
+        .form-divider::before { left: 0; }
+        .form-divider::after { right: 0; }
+        .login-link { text-align: center; margin-top: 20px; }
+        .text-primary { color: var(--primary-color) !important; }
+        .alert { padding: 10px 15px; margin-bottom: 20px; border-radius: 8px; }
+        .blob-blue { position: absolute; background-color: var(--accent-blue); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; z-index: 0; }
+        .blob-blue-1 { width: 200px; height: 200px; top: -50px; left: -50px; }
+        .blob-blue-2 { width: 300px; height: 300px; bottom: -100px; left: -50px; }
+        .blob-blue-3 { width: 180px; height: 180px; top: 50%; right: -50px; transform: translateY(-50%); }
+        .name-row { display: flex; gap: 15px; margin-bottom: 0; }
+        .name-row .form-group { flex: 1; }
         
-        body::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.5;
-            z-index: -1;
-        }
+        /* Eye toggle styling */
+        .input-group-text { background-color: white; border-left: none; cursor: pointer; }
+        .password-field { border-right: none; }
         
-        .signup-container {
-            max-width: 1000px;
-            margin: 0 auto;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: var(--card-shadow);
-            background: white;
-            position: relative;
-            z-index: 2;
-        }
-        
-        .signup-row {
-            display: flex;
-            min-height: 700px;
-        }
-        
-        .signup-image {
-            flex: 0.8;
-            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .signup-image-content {
-            position: relative;
-            z-index: 5;
-            padding: 30px;
-            color: white;
-            text-align: center;
-            max-width: 80%;
-        }
-        
-        .signup-image-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        .signup-image-text {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            line-height: 1.6;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
-        
-        .signup-benefits {
-            margin-top: 30px;
-            text-align: left;
-        }
-        
-        .benefit-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .benefit-icon {
-            margin-right: 15px;
-            background-color: rgba(255, 255, 255, 0.2);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .benefit-text {
-            font-size: 0.95rem;
-        }
-        
-        .floating-elements {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-        
-        .floating-element {
-            position: absolute;
-            color: rgba(255, 255, 255, 0.15);
-            font-size: 2rem;
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        .element-1 {
-            top: 10%;
-            left: 10%;
-            animation-delay: 0s;
-        }
-        
-        .element-2 {
-            top: 20%;
-            right: 15%;
-            animation-delay: 1s;
-        }
-        
-        .element-3 {
-            bottom: 15%;
-            left: 15%;
-            animation-delay: 2s;
-        }
-        
-        .element-4 {
-            bottom: 25%;
-            right: 10%;
-            animation-delay: 3s;
-        }
-        
-        .element-5 {
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation-delay: 4s;
-        }
-        
-        @keyframes float {
-            0% { transform: translateY(0) rotate(0); }
-            50% { transform: translateY(-15px) rotate(5deg); }
-            100% { transform: translateY(0) rotate(0); }
-        }
-        
-        .signup-form {
-            flex: 1.2;
-            padding: 40px 50px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        
-        .logo {
-            text-align: center;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .logo img {
-            height: 70px;
-            transition: transform 0.3s ease;
-        }
-        
-        .logo-text {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-left: 10px;
-        }
-        
-        .logo:hover img {
-            transform: scale(1.05);
-        }
-        
-        h2 {
-            font-weight: 700;
-            font-size: 1.8rem;
-            text-align: center;
-            margin-bottom: 25px;
-            color: var(--text-dark);
-            position: relative;
-            display: inline-block;
-            padding-bottom: 10px;
-        }
-        
-        h2::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 4px;
-            background-color: var(--primary-color);
-            border-radius: 2px;
-        }
-        
-        .form-control {
-            height: 55px;
-            padding: 12px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #e2e8f0;
-            font-size: 1rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(248, 176, 121, 0.2);
-        }
-        
-        .form-control.is-invalid {
-            border-color: #dc3545;
-            background-image: none;
-        }
-        
-        .invalid-feedback {
-            color: #dc3545;
-            font-size: 0.85rem;
-            margin-top: -15px;
-            margin-bottom: 15px;
-        }
-        
-        .name-row {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 0;
-        }
-        
-        .name-row .form-group {
-            flex: 1;
-        }
-        
-        .optional-field {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: white;
-            padding: 0 5px;
-            border-radius: 10px;
-            pointer-events: none;
-            z-index: 1;
-        }
-        
-        /* Add a specific style for middle name field to prevent overlap */
-        .middle-name-container {
-            position: relative;
-        }
-        
-        .middle-name-container .optional-field {
-            right: 15px;
-            top: 15px;
-            background-color: #fff;
-            padding: 0 5px;
-            z-index: 5;
-        }
-        
-        .btn-signup {
-            height: 55px;
-            background: linear-gradient(to right, var(--primary-color), var(--primary-dark));
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-top: 10px;
-            color: white;
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-signup::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to right, var(--primary-dark), var(--primary-color));
-            z-index: -1;
-            transition: opacity 0.3s ease;
-            opacity: 0;
-        }
-        
-        .btn-signup:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(248, 176, 121, 0.4);
-        }
-        
-        .btn-signup:hover::after {
-            opacity: 1;
-        }
-        
-        .form-divider {
-            text-align: center;
-            position: relative;
-            margin: 30px 0;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-        
-        .form-divider::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 42%;
-            height: 1px;
-            background-color: #e2e8f0;
-        }
-        
-        .form-divider::after {
-            content: "";
-            position: absolute;
-            right: 0;
-            top: 50%;
-            width: 42%;
-            height: 1px;
-            background-color: #e2e8f0;
-        }
-        
-        .login-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.95rem;
-            color: var(--text-light);
-        }
-        
-        .text-primary {
-            color: var(--primary-color) !important;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            text-decoration: none;
-        }
-        
-        .text-primary:hover {
-            color: var(--primary-dark) !important;
-            text-decoration: underline;
-        }
-        
-        .alert {
-            padding: 15px;
-            margin-bottom: 25px;
-            border-radius: 12px;
-            border: none;
-            font-size: 0.95rem;
-        }
-        
-        .alert-danger {
-            background-color: #fee2e2;
-            color: #b91c1c;
-        }
-        
-        .form-check-input {
-            width: 18px;
-            height: 18px;
-            margin-top: 0.25em;
-            vertical-align: top;
-            background-color: #fff;
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: contain;
-            border: 1px solid #d1d5db;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            transition: all 0.3s ease;
-        }
-        
-        .form-check-input:checked {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .form-check-label {
-            margin-left: 5px;
-            font-size: 0.95rem;
-            color: var(--text-light);
-        }
-        
-        .form-check-label a {
-            transition: all 0.3s ease;
-        }
-        
-        .form-group {
-            position: relative;
-        }
-        
-        .password-toggle {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            cursor: pointer;
-            z-index: 10;
-            transition: all 0.3s ease;
-        }
-        
-        .password-toggle:hover {
-            color: var(--primary-color);
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 1200px) {
-            .signup-container {
-                max-width: 95%;
-                margin: 0 auto;
-            }
-
-            .signup-image-content {
-                padding: 25px;
-                max-width: 85%;
-            }
-
-            .signup-image-title {
-                font-size: 1.8rem;
-            }
-
-            .signup-image-text {
-                font-size: 1rem;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .signup-container {
-                max-width: 90%;
-                margin: 0 auto;
-            }
-
-            .signup-image-content {
-                padding: 20px;
-                max-width: 90%;
-            }
-
-            .signup-image-title {
-                font-size: 1.6rem;
-            }
-
-            .signup-image-text {
-                font-size: 0.95rem;
-            }
-
-            .signup-form {
-                padding: 45px 35px;
-            }
-
-            .form-control {
-                height: 50px;
-                padding: 10px 18px;
-                font-size: 0.95rem;
-            }
-
-            .btn-signup {
-                height: 50px;
-                font-size: 1rem;
-            }
-        }
-
+        @media (max-width: 992px) { .signup-container { max-width: 90%; } }
         @media (max-width: 768px) {
-            .signup-row {
-                flex-direction: column;
-                min-height: auto;
-            }
-
-            .signup-image {
-                display: none;
-            }
-
-            .signup-form {
-                padding: 40px 30px;
-                flex: none;
-            }
-
-            .logo img {
-                height: 60px;
-            }
-
-            .logo-text {
-                font-size: 1.4rem;
-            }
-
-            h2 {
-                font-size: 1.7rem;
-            }
-
-            .name-row {
-                flex-direction: column;
-                gap: 0;
-            }
-
-            .name-row .form-group {
-                width: 100%;
-            }
-
-            .form-control {
-                height: 48px;
-                padding: 10px 16px;
-                font-size: 0.95rem;
-                margin-bottom: 18px;
-            }
-
-            .btn-signup {
-                height: 48px;
-                font-size: 1rem;
-                margin-top: 8px;
-            }
-
-            .form-check {
-                margin-bottom: 20px;
-            }
-
-            .form-check-label {
-                font-size: 0.9rem;
-            }
-
-            .terms-link {
-                font-size: 0.9rem;
-            }
-
-            .signin-link {
-                font-size: 0.9rem;
-                margin-top: 18px;
-            }
-
-            .alert {
-                padding: 12px;
-                font-size: 0.9rem;
-                margin-bottom: 20px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            body {
-                padding: 20px 0;
-            }
-
-            .signup-container {
-                max-width: 95%;
-                margin: 0 auto;
-                border-radius: 16px;
-            }
-
-            .signup-form {
-                padding: 30px 20px;
-            }
-
-            .logo {
-                margin-bottom: 20px;
-            }
-
-            .logo img {
-                height: 50px;
-            }
-
-            .logo-text {
-                font-size: 1.2rem;
-                margin-left: 8px;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-                margin-bottom: 20px;
-            }
-
-            .form-control {
-                height: 45px;
-                padding: 8px 14px;
-                font-size: 0.9rem;
-                margin-bottom: 16px;
-                border-radius: 10px;
-            }
-
-            .btn-signup {
-                height: 45px;
-                font-size: 0.95rem;
-                margin-top: 6px;
-                border-radius: 10px;
-            }
-
-            .form-check {
-                margin-bottom: 18px;
-            }
-
-            .form-check-input {
-                width: 16px;
-                height: 16px;
-            }
-
-            .form-check-label {
-                font-size: 0.85rem;
-                margin-left: 6px;
-            }
-
-            .terms-link {
-                font-size: 0.85rem;
-            }
-
-            .form-divider {
-                margin: 25px 0;
-                font-size: 0.85rem;
-            }
-
-            .form-divider::before,
-            .form-divider::after {
-                width: 38%;
-            }
-
-            .signin-link {
-                font-size: 0.85rem;
-                margin-top: 16px;
-            }
-
-            .alert {
-                padding: 10px;
-                font-size: 0.85rem;
-                margin-bottom: 18px;
-                border-radius: 8px;
-            }
-
-            .invalid-feedback {
-                font-size: 0.8rem;
-                margin-top: -12px;
-                margin-bottom: 12px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            body {
-                padding: 15px 0;
-            }
-
-            .signup-container {
-                max-width: 98%;
-                margin: 0 auto;
-                border-radius: 12px;
-            }
-
-            .signup-form {
-                padding: 25px 16px;
-            }
-
-            .logo {
-                margin-bottom: 18px;
-            }
-
-            .logo img {
-                height: 45px;
-            }
-
-            .logo-text {
-                font-size: 1.1rem;
-                margin-left: 6px;
-            }
-
-            h2 {
-                font-size: 1.4rem;
-                margin-bottom: 18px;
-            }
-
-            .form-control {
-                height: 42px;
-                padding: 8px 12px;
-                font-size: 0.85rem;
-                margin-bottom: 14px;
-                border-radius: 8px;
-            }
-
-            .btn-signup {
-                height: 42px;
-                font-size: 0.9rem;
-                margin-top: 4px;
-                border-radius: 8px;
-            }
-
-            .form-check {
-                margin-bottom: 16px;
-            }
-
-            .form-check-input {
-                width: 14px;
-                height: 14px;
-            }
-
-            .form-check-label {
-                font-size: 0.8rem;
-                margin-left: 5px;
-            }
-
-            .terms-link {
-                font-size: 0.8rem;
-            }
-
-            .form-divider {
-                margin: 20px 0;
-                font-size: 0.8rem;
-            }
-
-            .form-divider::before,
-            .form-divider::after {
-                width: 35%;
-            }
-
-            .signin-link {
-                font-size: 0.8rem;
-                margin-top: 14px;
-            }
-
-            .alert {
-                padding: 8px;
-                font-size: 0.8rem;
-                margin-bottom: 16px;
-                border-radius: 6px;
-            }
-
-            .invalid-feedback {
-                font-size: 0.75rem;
-                margin-top: -10px;
-                margin-bottom: 10px;
-            }
+            .signup-row { flex-direction: column; }
+            .signup-image { display: none; }
+            .signup-form { padding: 30px; }
+            .name-row { flex-direction: column; gap: 0; }
+            .name-row .form-group { width: 100%; }
         }
     </style>
 </head>
@@ -897,124 +239,121 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="signup-row">
                 <!-- Left side - Decorative illustration -->
                 <div class="signup-image">
-                    <div class="floating-elements">
-                        <div class="floating-element element-1"><i class="fas fa-book"></i></div>
-                        <div class="floating-element element-2"><i class="fas fa-book-open"></i></div>
-                        <div class="floating-element element-3"><i class="fas fa-bookmark"></i></div>
-                        <div class="floating-element element-4"><i class="fas fa-book-reader"></i></div>
-                        <div class="floating-element element-5"><i class="fas fa-graduation-cap"></i></div>
-                    </div>
-                    
-                    <div class="signup-image-content">
-                        <div class="signup-image-title">Join BookWagon Today</div>
-                        <div class="signup-image-text">Create your account and become part of the Philippines' growing community of book lovers.</div>
-                        
-                        <div class="signup-benefits">
-                            <div class="benefit-item">
-                                <div class="benefit-icon">
-                                    <i class="fas fa-shopping-cart"></i>
-                                </div>
-                                <div class="benefit-text">Buy and sell books at great prices</div>
-                            </div>
-                            
-                            <div class="benefit-item">
-                                <div class="benefit-icon">
-                                    <i class="fas fa-sync-alt"></i>
-                                </div>
-                                <div class="benefit-text">Rent books and save money</div>
-                            </div>
-                            
-                            <div class="benefit-item">
-                                <div class="benefit-icon">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                                <div class="benefit-text">Connect with fellow book enthusiasts</div>
-                            </div>
-                            
-                            <div class="benefit-item">
-                                <div class="benefit-icon">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                </div>
-                                <div class="benefit-text">Find libraries and bookshops near you</div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="blob-blue blob-blue-1"></div>
+                    <div class="blob-blue blob-blue-2"></div>
+                    <div class="blob-blue blob-blue-3"></div>
                 </div>
                 
                 <!-- Right side - Signup form -->
                 <div class="signup-form">
                     <div class="logo">
                         <img src="images/logo.png" alt="BookWagon Logo">
-
                     </div>
                     
-                    <div class="text-center mb-4">
-                        <h2>Create an Account</h2>
-                    </div>
+                    <h2>Create Account</h2>
                     
                     <?php 
                     if(!empty($signup_err)){
-                        echo '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>' . $signup_err . '</div>';
+                        echo '<div class="alert alert-danger">' . $signup_err . '</div>';
                     }        
                     ?>
                     
                     <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+                        
+                        <!-- Name Row -->
                         <div class="name-row">
                             <div class="form-group">
-                                <input type="text" name="firstname" class="form-control <?php echo (!empty($firstname_err)) ? 'is-invalid' : ''; ?>" 
-                                       value="<?php echo $firstname; ?>" placeholder="First Name">
-                                <span class="invalid-feedback"><?php echo $firstname_err; ?></span>
-                            </div>
-                            
-                            <div class="form-group middle-name-container">
-                                <input type="text" name="middlename" class="form-control" 
-                                       value="<?php echo $middlename; ?>" placeholder="Middle Name">
-                                <span class="optional-field">Optional</span>
+                                <input type="text" name="firstname" class="form-control <?php echo (!empty($firstName_err)) ? 'is-invalid' : ''; ?>" 
+                                       value="<?php echo htmlspecialchars($firstName); ?>" placeholder="First Name">
+                                <span class="invalid-feedback"><?php echo $firstName_err; ?></span>
                             </div>
                             
                             <div class="form-group">
-                                <input type="text" name="lastname" class="form-control <?php echo (!empty($lastname_err)) ? 'is-invalid' : ''; ?>" 
-                                       value="<?php echo $lastname; ?>" placeholder="Last Name">
-                                <span class="invalid-feedback"><?php echo $lastname_err; ?></span>
+                                <input type="text" name="lastname" class="form-control <?php echo (!empty($lastName_err)) ? 'is-invalid' : ''; ?>" 
+                                       value="<?php echo htmlspecialchars($lastName); ?>" placeholder="Last Name">
+                                <span class="invalid-feedback"><?php echo $lastName_err; ?></span>
                             </div>
                         </div>
                         
+                        <!-- Email -->
                         <div class="form-group">
                             <input type="email" name="email" class="form-control <?php echo (!empty($email_err)) ? 'is-invalid' : ''; ?>" 
-                                   value="<?php echo $email; ?>" placeholder="Email Address">
+                                   value="<?php echo htmlspecialchars($email); ?>" placeholder="Email Address">
                             <span class="invalid-feedback"><?php echo $email_err; ?></span>
                         </div>
                         
+                        <!-- Confirm Email -->
                         <div class="form-group">
-                            <input type="password" name="password" id="password" class="form-control <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>" 
-                                   placeholder="Password">
-                            <span class="password-toggle" onclick="togglePassword('password')">
-                                <i class="fas fa-eye"></i>
-                            </span>
-                            <span class="invalid-feedback"><?php echo $password_err; ?></span>
+                            <input type="email" name="confirm_email" class="form-control <?php echo (!empty($confirm_email_err)) ? 'is-invalid' : ''; ?>" 
+                                   value="<?php echo htmlspecialchars($confirm_email); ?>" placeholder="Confirm Email Address">
+                            <span class="invalid-feedback"><?php echo $confirm_email_err; ?></span>
                         </div>
                         
+                        <!-- Password with Eye Toggle -->
                         <div class="form-group">
-                            <input type="password" name="confirm_password" id="confirm_password" class="form-control <?php echo (!empty($confirm_password_err)) ? 'is-invalid' : ''; ?>" 
-                                   placeholder="Confirm Password">
-                            <span class="password-toggle" onclick="togglePassword('confirm_password')">
-                                <i class="fas fa-eye"></i>
-                            </span>
-                            <span class="invalid-feedback"><?php echo $confirm_password_err; ?></span>
+                            <div class="input-group">
+                                <input type="password" id="password" name="password" class="form-control password-field <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>" 
+                                       placeholder="Password">
+                                <span class="input-group-text" onclick="togglePassword('password', 'toggle-eye-1')">
+                                    <i class="bi bi-eye-slash" id="toggle-eye-1"></i>
+                                </span>
+                            </div>
+                            
+                            <!-- Password Strength Meter -->
+                            <div class="password-strength-container mt-2 d-none" id="password-strength-container" style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e9ecef;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="fw-bold text-muted">Password Strength: <span id="strength-text">Weak</span></small>
+                                </div>
+                                <div class="progress" style="height: 6px; margin-bottom: 10px;">
+                                    <div class="progress-bar bg-danger transition-all" id="strength-bar" role="progressbar" style="width: 0%; transition: width 0.3s ease, background-color 0.3s ease;"></div>
+                                </div>
+                                <ul class="list-unstyled mb-0 small" style="columns: 2;">
+                                    <li id="req-length" class="text-muted"><i class="bi bi-x-circle text-danger me-1"></i> 8+ characters</li>
+                                    <li id="req-upper" class="text-muted"><i class="bi bi-x-circle text-danger me-1"></i> Uppercase</li>
+                                    <li id="req-number" class="text-muted"><i class="bi bi-x-circle text-danger me-1"></i> Number</li>
+                                    <li id="req-special" class="text-muted"><i class="bi bi-x-circle text-danger me-1"></i> Special char</li>
+                                </ul>
+                            </div>
+
+                            <?php if(!empty($password_err)): ?>
+                                <div class="text-danger small mt-1"><?php echo $password_err; ?></div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <!-- Confirm Password with Eye Toggle -->
+                        <div class="form-group">
+                            <div class="input-group">
+                                <input type="password" id="confirm_password" name="confirm_password" class="form-control password-field <?php echo (!empty($confirm_password_err)) ? 'is-invalid' : ''; ?>" 
+                                       placeholder="Confirm Password">
+                                <span class="input-group-text" onclick="togglePassword('confirm_password', 'toggle-eye-2')">
+                                    <i class="bi bi-eye-slash" id="toggle-eye-2"></i>
+                                </span>
+                            </div>
+                            <?php if(!empty($confirm_password_err)): ?>
+                                <div class="text-danger small mt-1"><?php echo $confirm_password_err; ?></div>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="checkbox" value="" id="termsCheck" required>
-                            <label class="form-check-label" for="termsCheck">
-                                I agree to the <a href="terms.php" class="text-primary">Terms of Service</a> and <a href="privacy.php" class="text-primary">Privacy Policy</a>
+                            <label class="form-check-label" for="termsCheck" style="cursor: pointer;">
+                                I agree to the <span class="text-primary text-decoration-underline" id="termsLink">Terms of Service and Privacy Policy</span>
                             </label>
+                        </div>
+
+                        <!-- Google reCAPTCHA -->
+                        <div class="form-group d-flex flex-column align-items-center">
+                            <div class="g-recaptcha" data-sitekey="6LcndJktAAAAAHfBOz7zcg5fxVW8dmJT9UoGO9jk"></div>
+                            <?php if(!empty($captcha_err)): ?>
+                                <div class="text-danger small mt-2 fw-bold text-center"><?php echo $captcha_err; ?></div>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary btn-signup w-100">Create Account</button>
                         </div>
                         
-                        <div class="form-divider">or sign up with</div>
+                        <div class="form-divider">Or</div>
                         
                         <div class="login-link">
                             Already have an account? <a href="login.php" class="text-primary">Sign in</a>
@@ -1028,22 +367,220 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Custom Script -->
+    <!-- Custom JS for Password Toggle -->
     <script>
-        function togglePassword(inputId) {
+        function togglePassword(inputId, iconId) {
             const passwordInput = document.getElementById(inputId);
-            const icon = event.currentTarget.querySelector('i');
+            const eyeIcon = document.getElementById(iconId);
             
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
+                eyeIcon.classList.remove('bi-eye-slash');
+                eyeIcon.classList.add('bi-eye');
             } else {
                 passwordInput.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
+                eyeIcon.classList.remove('bi-eye');
+                eyeIcon.classList.add('bi-eye-slash');
             }
         }
+
+        // Password Strength Meter Logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('password');
+            const strengthContainer = document.getElementById('password-strength-container');
+            const strengthBar = document.getElementById('strength-bar');
+            const strengthText = document.getElementById('strength-text');
+            
+            // Requirements elements
+            const reqLength = document.getElementById('req-length');
+            const reqUpper = document.getElementById('req-upper');
+            const reqNumber = document.getElementById('req-number');
+            const reqSpecial = document.getElementById('req-special');
+
+            function updateIcon(element, isValid) {
+                const icon = element.querySelector('i');
+                if (isValid) {
+                    icon.classList.remove('bi-x-circle', 'text-danger');
+                    icon.classList.add('bi-check-circle-fill', 'text-success');
+                    element.classList.remove('text-muted');
+                    element.classList.add('text-success');
+                } else {
+                    icon.classList.remove('bi-check-circle-fill', 'text-success');
+                    icon.classList.add('bi-x-circle', 'text-danger');
+                    element.classList.remove('text-success');
+                    element.classList.add('text-muted');
+                }
+            }
+
+            passwordInput.addEventListener('input', function() {
+                const val = passwordInput.value;
+                
+                // Show container if there is text, hide if empty
+                if (val.length > 0) {
+                    strengthContainer.classList.remove('d-none');
+                } else {
+                    strengthContainer.classList.add('d-none');
+                }
+
+                // Check rules
+                const hasLength = val.length >= 8;
+                const hasUpper = /[A-Z]/.test(val);
+                const hasNumber = /[0-9]/.test(val);
+                const hasSpecial = /[\W_]/.test(val);
+
+                // Update UI icons
+                updateIcon(reqLength, hasLength);
+                updateIcon(reqUpper, hasUpper);
+                updateIcon(reqNumber, hasNumber);
+                updateIcon(reqSpecial, hasSpecial);
+
+                // Calculate score
+                let score = 0;
+                if (hasLength) score++;
+                if (hasUpper) score++;
+                if (hasNumber) score++;
+                if (hasSpecial) score++;
+
+                // Update Progress Bar
+                strengthBar.classList.remove('bg-danger', 'bg-warning', 'bg-info', 'bg-success');
+                
+                switch(score) {
+                    case 0:
+                    case 1:
+                        strengthBar.style.width = '25%';
+                        strengthBar.classList.add('bg-danger');
+                        strengthText.textContent = 'Weak';
+                        strengthText.className = 'text-danger';
+                        break;
+                    case 2:
+                        strengthBar.style.width = '50%';
+                        strengthBar.classList.add('bg-warning');
+                        strengthText.textContent = 'Fair';
+                        strengthText.className = 'text-warning';
+                        break;
+                    case 3:
+                        strengthBar.style.width = '75%';
+                        strengthBar.classList.add('bg-info');
+                        strengthText.textContent = 'Good';
+                        strengthText.className = 'text-info';
+                        break;
+                    case 4:
+                        strengthBar.style.width = '100%';
+                        strengthBar.classList.add('bg-success');
+                        strengthText.textContent = 'Strong';
+                        strengthText.className = 'text-success';
+                        break;
+                }
+            });
+        });
+        // Terms Modal Logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const termsCheck = document.getElementById('termsCheck');
+            const termsLink = document.getElementById('termsLink');
+            const termsBody = document.getElementById('termsBody');
+            const btnAcceptTerms = document.getElementById('btnAcceptTerms');
+            let termsModal;
+
+            // Intercept checkbox click
+            termsCheck.addEventListener('click', function(e) {
+                if (!this.checked) {
+                    // Allow unchecking without modal
+                    return;
+                }
+                // Prevent checking and show modal instead
+                e.preventDefault();
+                if (!termsModal) termsModal = new bootstrap.Modal(document.getElementById('termsModal'));
+                termsModal.show();
+            });
+
+            // Intercept link click
+            termsLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (!termsModal) termsModal = new bootstrap.Modal(document.getElementById('termsModal'));
+                termsModal.show();
+            });
+
+            // Handle scroll
+            if (termsBody) {
+                termsBody.addEventListener('scroll', function() {
+                    // Check if scrolled to bottom
+                    if (termsBody.scrollTop + termsBody.clientHeight >= termsBody.scrollHeight - 15) {
+                        btnAcceptTerms.disabled = false;
+                        btnAcceptTerms.textContent = 'I Accept';
+                    }
+                });
+            }
+
+            // Handle accept
+            if (btnAcceptTerms) {
+                btnAcceptTerms.addEventListener('click', function() {
+                    termsCheck.checked = true;
+                    if (termsModal) termsModal.hide();
+                });
+            }
+        });
     </script>
+
+    <!-- Terms Modal -->
+    <div class="modal fade" id="termsModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Terms of Service</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" id="termsBody" style="max-height: 60vh; overflow-y: auto;">
+                    <p class="text-muted small mb-4">Last Updated: <?php echo date("F j, Y"); ?></p>
+                    
+                    <p class="small text-muted mb-3">Welcome to BookWagon! These Terms of Service ("Terms") govern your use of the BookWagon website, services, and applications (collectively, the "Service"). By accessing or using our Service, you agree to be bound by these Terms. If you disagree with any part of the Terms, you may not access the Service.</p>
+                    
+                    <h6 class="fw-bold mt-4">1. Accounts</h6>
+                    <p class="small text-muted mb-3">When you create an account with us, you must provide accurate, complete, and up-to-date information. You are responsible for safeguarding the password you use to access the Service and for any activities or actions under your password. You agree not to disclose your password to any third party.</p>
+                    
+                    <h6 class="fw-bold mt-4">2. Book Listings and Transactions</h6>
+                    <p class="small text-muted mb-2">BookWagon facilitates the buying, selling, and renting of books between users. When listing a book, you agree to:</p>
+                    <ul class="small text-muted mb-3 ps-3">
+                        <li>Provide accurate descriptions of the book's condition</li>
+                        <li>Set fair prices that reflect the market value</li>
+                        <li>Honor your commitments to sell or rent</li>
+                    </ul>
+                    <p class="small text-muted mb-2">As a buyer or renter, you agree to:</p>
+                    <ul class="small text-muted mb-3 ps-3">
+                        <li>Make payments promptly</li>
+                        <li>Treat borrowed books with care and return them in the same condition</li>
+                    </ul>
+                    
+                    <h6 class="fw-bold mt-4">3. Service Fees</h6>
+                    <p class="small text-muted mb-3">BookWagon may charge fees for certain aspects of the Service. You agree to pay all fees and charges associated with your account on a timely basis. All fees are non-refundable unless otherwise stated.</p>
+
+                    <h6 class="fw-bold mt-4">4. Intellectual Property</h6>
+                    <p class="small text-muted mb-3">The Service and its original content, features, and functionality are and will remain the exclusive property of BookWagon and its licensors. The Service is protected by copyright and trademark laws of the Philippines.</p>
+
+                    <h6 class="fw-bold mt-4">5. User-Generated Content</h6>
+                    <p class="small text-muted mb-2">You agree not to post content that:</p>
+                    <ul class="small text-muted mb-3 ps-3">
+                        <li>Is illegal, harmful, threatening, or defamatory</li>
+                        <li>Infringes on intellectual property rights of others</li>
+                        <li>Contains malware, viruses, or other malicious code</li>
+                    </ul>
+
+                    <h6 class="fw-bold mt-4">6. Limitation of Liability</h6>
+                    <p class="small text-muted mb-3">In no event shall BookWagon or its affiliates be liable for any indirect, incidental, special, consequential or punitive damages resulting from your access to or use of the Service.</p>
+                    
+                    <h6 class="fw-bold mt-4">7. Termination</h6>
+                    <p class="small text-muted mb-3">We may terminate or suspend your account immediately, without prior notice, for any reason whatsoever, including without limitation if you breach the Terms.</p>
+
+                    <h6 class="fw-bold mt-4">8. Governing Law</h6>
+                    <p class="small text-muted mb-3">These Terms shall be governed and construed in accordance with the laws of the Philippines.</p>
+                    
+                    <p class="mt-4 pt-3 border-top text-danger fw-bold text-center">By clicking Accept below, you agree to all these terms.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btnAcceptTerms" disabled>Scroll to Accept</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

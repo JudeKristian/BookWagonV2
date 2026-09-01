@@ -1,21 +1,17 @@
 <?php
-if (session_status() == PHP_SESSION_NONE) {
+if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Debug information
-error_log("Session data: " . print_r($_SESSION, true));
-error_log("Session ID: " . session_id());
-
-// Check if user is logged in
-if (!isset($_SESSION['id'])) {
-    error_log("User not logged in");
-} else {
-    error_log("User logged in with ID: " . $_SESSION['id']);
+// Synchronize session user ID aliases for compatibility
+if (isset($_SESSION['user_id']) && !isset($_SESSION['id'])) {
+    $_SESSION['id'] = $_SESSION['user_id'];
+} elseif (isset($_SESSION['id']) && !isset($_SESSION['user_id'])) {
+    $_SESSION['user_id'] = $_SESSION['id'];
 }
 
 // Check if user is logged in
-if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_SESSION['id'])) {
+if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_SESSION['user_id'])) {
     // Store the requested page in session to redirect back after login
     $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     // Redirect to login page if not logged in

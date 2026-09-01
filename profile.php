@@ -5,10 +5,14 @@ include("connect.php");
 // Get profile user ID from URL
 $profileUserId = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// If no user ID provided, redirect to dashboard
+// If no user ID provided, default to logged in user
 if ($profileUserId === 0) {
-    header("Location: dashboard.php");
-    exit();
+    if (isset($_SESSION['id']) && $_SESSION['id'] > 0) {
+        $profileUserId = $_SESSION['id'];
+    } else {
+        header("Location: login.php");
+        exit();
+    }
 }
 
 // Check if user exists
@@ -700,11 +704,8 @@ if (isset($_SESSION['id'])) {
     <!-- Include Header -->
     <?php 
     $userType = $_SESSION['usertype'] ?? '';
-    if ($userType == 'user') {
-        include("include/user_header.php");
-    } elseif ($userType == 'seller') {
-        include("include/seller_header.php");
-    }
+    include("include/user_header.php");
+    include("include/tab.php");
     ?>
 
     <div class="container profile-container">

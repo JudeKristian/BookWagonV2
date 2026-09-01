@@ -1093,13 +1093,7 @@ $rating = rand(4, 5);
 </head>
 
 <body>
-    <?php 
-    if ($userType == 'user') {
-        include("include/user_header.php");
-    } elseif ($userType == 'seller') {
-        include("include/seller_header.php");
-    }
-    ?>
+    <?php include("include/user_header.php"); ?>
 
     <?php include('include/tab.php'); ?>
 
@@ -1433,6 +1427,9 @@ $rating = rand(4, 5);
             </div>
         </div>
     </div>
+
+    <!-- BookWagon Global Footer -->
+    <?php include("include/footer.php"); ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     

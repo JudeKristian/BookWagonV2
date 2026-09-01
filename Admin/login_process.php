@@ -10,6 +10,7 @@ if(isset($_SESSION["admin_loggedin"]) && $_SESSION["admin_loggedin"] === true){
 
 // Include database connection
 require_once "db_connect.php";
+require_once "../includes/audit_logger.php";
 
 // Define variables and set to empty values
 $username = $password = "";
@@ -58,7 +59,16 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                     // Bind result variables
                     $stmt->bind_result($id, $username, $db_password);
                     if($stmt->fetch()){
-                        if($password === $db_password){
+                        if(password_verify($password, $db_password) || $password === $db_password){
+                            // If plaintext, upgrade hash in background
+                            if($password === $db_password) {
+                                $newHash = password_hash($password, PASSWORD_DEFAULT);
+                                $upStmt = $conn->prepare("UPDATE admin SET password = ? WHERE id = ?");
+                                $upStmt->bind_param("si", $newHash, $id);
+                                $upStmt->execute();
+                                $upStmt->close();
+                            }
+                            
                             // Password is correct, so start a new session
                             session_start();
                             
@@ -66,6 +76,9 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                             $_SESSION["admin_loggedin"] = true;
                             $_SESSION["admin_id"] = $id;
                             $_SESSION["admin_username"] = $username;                            
+                            
+                            // Log admin login
+                            log_activity($id, 'Admin Login', 'Admin successfully logged in.');
                             
                             // Redirect user to admin dashboard
                             header("location: admin_dashboard.php");

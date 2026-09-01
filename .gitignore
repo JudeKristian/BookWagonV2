@@ -1,0 +1,24 @@
+﻿# Database config (contains credentials - NEVER commit this)
+connect.php
+google_config.php
+
+# Upload files (user-generated content, too large for git)
+uploads/
+
+# Debug / temp files
+debug.txt
+strip_inserts.py
+*.log
+*.tmp
+
+# SQL dump files with real data
+bookwagon_db*.sql
+full_database_setup.sql
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/

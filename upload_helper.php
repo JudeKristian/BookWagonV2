@@ -59,6 +59,33 @@ function upload_book_cover($file, $upload_dir = 'uploads/covers/') {
     
     // Generate a unique filename (with timestamp for additional uniqueness)
     $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    
+    // SECURE UPLOAD VALIDATION
+    // 1. Validate file extension
+    $allowed_types = array('jpg', 'jpeg', 'png', 'gif', 'webp');
+    if (!in_array($file_extension, $allowed_types)) {
+        error_log("Security Error: Invalid file type uploaded - " . $file_extension);
+        return false;
+    }
+    
+    // 2. Validate file size (max 5MB)
+    $max_size = 5 * 1024 * 1024;
+    if ($file['size'] > $max_size) {
+        error_log("Security Error: File exceeds maximum allowed size of 5MB.");
+        return false;
+    }
+    
+    // 3. Validate MIME type to prevent fake extensions
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    if ($finfo !== false) {
+        $mime_type = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        $allowed_mimes = array('image/jpeg', 'image/png', 'image/gif', 'image/webp');
+        if (!in_array($mime_type, $allowed_mimes)) {
+            error_log("Security Error: Invalid MIME type - " . $mime_type);
+            return false;
+        }
+    }
     $new_filename = time() . '_' . uniqid() . '.' . $file_extension;
     $destination = $upload_dir . $new_filename;
     

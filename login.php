@@ -1,116 +1,220 @@
 <?php
+// Initialize session at the VERY top for lockout tracking
+session_start();
 
-include("connect.php");
+// Database configuration
+$db_host = "localhost";
+$db_user = "root";
+$db_pass = "";
+$db_name = "bookwagon_db";
 
-// Initialize variables
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+if ($conn->connect_error) {
+    die("System error: Unable to connect to the database.");
+}
+
+require_once 'includes/audit_logger.php';
+require_once 'google_config.php';
+
+// --- ACCOUNT LOCKOUT LOGIC ---
+$max_attempts = 3;
+$lockout_time = 300; // 5 minutes in seconds
+$login_err = "";
+
+if (isset($_SESSION['login_attempts']) && $_SESSION['login_attempts'] >= $max_attempts) {
+    $time_since_last_attempt = time() - $_SESSION['last_login_attempt'];
+    if ($time_since_last_attempt < $lockout_time) {
+        $minutes_left = ceil(($lockout_time - $time_since_last_attempt) / 60);
+        $login_err = "Account locked due to too many failed attempts. Please try again in $minutes_left minutes.";
+    } else {
+        // Reset after timer expires
+        $_SESSION['login_attempts'] = 0;
+        unset($_SESSION['last_login_attempt']);
+    }
+}
+
 $email = $password = "";
-$email_err = $password_err = $login_err = "";
+$email_err = $password_err = $captcha_err = "";
 
-// Processing form data when form is submitted
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    
-    // Validate email
-    if (empty(trim($_POST["email"]))) {
-        $email_err = "Please enter your email.";
-    } else {
-        $email = trim($_POST["email"]);
-    }
-    
-    // Validate password
-    if (empty(trim($_POST["password"]))) {
-        $password_err = "Please enter your password.";
-    } else {
-        $password = trim($_POST["password"]);
-    }
-    
-    // Check input errors before checking database
-    if (empty($email_err) && empty($password_err)) {
-        // Prepare a select statement
-        $sql = "SELECT id, email, password, firstname, lastname, username, usertype FROM users WHERE email = ?";
+// Pre-fill email if remember cookie exists
+if (empty($_POST) && isset($_COOKIE['remember_email'])) {
+    $email = $_COOKIE['remember_email'];
+}
 
-        if ($stmt = $conn->prepare($sql)) {
-            // Bind variables to the prepared statement as parameters
-            $stmt->bind_param("s", $param_email);
-            
-            // Set parameters
-            $param_email = $email;
-            
-            // Attempt to execute the prepared statement
-            if ($stmt->execute()) {
-                // Store result
-                $stmt->store_result();
-                
-                // Check if email exists, if yes then verify password
-                if ($stmt->num_rows == 1) {                    
-                    // Bind result variables
-                    $stmt->bind_result($id, $email, $hashed_password, $firstname, $lastname, $username, $usertype);
-                    if ($stmt->fetch()) {
-                        if (password_verify($password, $hashed_password)) {
-                            // Password is correct, start a new session
-                            session_start();
-                            
-                            // Get the current login count
-                            $loginCountSql = "SELECT login_count FROM users WHERE id = ?";
-                            $loginCountStmt = $conn->prepare($loginCountSql);
-                            $loginCountStmt->bind_param("i", $id);
-                            $loginCountStmt->execute();
-                            $loginCountStmt->bind_result($login_count);
-                            $loginCountStmt->fetch();
-                            $loginCountStmt->close();
-                            
-                            // Check if this is the user's first login (login_count is 0)
-                            $isFirstLogin = ($login_count == 0);
-                            
-                            // Increment the login count
-                            $updateLoginCountSql = "UPDATE users SET login_count = login_count + 1 WHERE id = ?";
-                            $updateLoginCountStmt = $conn->prepare($updateLoginCountSql);
-                            $updateLoginCountStmt->bind_param("i", $id);
-                            $updateLoginCountStmt->execute();
-                            $updateLoginCountStmt->close();
-                            
-                            // Store data in session variables
-                            $_SESSION["loggedin"] = true;
-                            $_SESSION["id"] = $id;
-                            $_SESSION["email"] = $email;
-                            $_SESSION["firstname"] = $firstname;
-                            $_SESSION["lastname"] = $lastname;
-                            $_SESSION["username"] = $username;
-                            $_SESSION["usertype"] = $usertype;
-                            $_SESSION["login_count"] = $login_count + 1;
-                            
-                            // Check if this is a new user or the first login
-                            $isNewUser = isset($_GET['new_user']) && $_GET['new_user'] == '1';
-                            
-                            // Redirect based on usertype and whether this is a new user
-                            if($usertype === "admin") {
-                                header("location: admin/dashboard.php");
-                            } else if($isNewUser || $isFirstLogin) {
-                                // Redirect new users to the welcome page
-                                header("location: welcome.php");
-                            } else {
-                                header("location: dashboard.php");
-                            }
-                        } else {
-                            // Password is not valid
-                            $login_err = "Invalid email or password.";
-                        }
-                    }
-                } else {
-                    // Email doesn't exist
-                    $login_err = "Invalid email or password.";
-                }
-            } else {
-                echo "Oops! Something went wrong. Please try again later.";
-            }
+// Processing form data when form is submitted (AND NOT LOCKED OUT)
+if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($login_err)) {
+    
+    // 1. Google reCAPTCHA Validation
+    if (empty($_POST['g-recaptcha-response'])) {
+        $captcha_err = "Please check the 'I'm not a robot' checkbox.";
+    } else {
+        $recaptcha_secret = '6LcndJktAAAAACj2R6ryalgZG2dBaKfeIfZ50Yp4';
+        $recaptcha_response = $_POST['g-recaptcha-response'];
+        $recaptcha_url = "https://www.google.com/recaptcha/api/siteverify";
         
-            // Close statement
-            $stmt->close();
+        $options = array(
+            'http' => array(
+                'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+                'method'  => 'POST',
+                'content' => http_build_query(array(
+                    'secret' => $recaptcha_secret,
+                    'response' => $recaptcha_response
+                ))
+            )
+        );
+        $context  = stream_context_create($options);
+        $recaptcha_verify = file_get_contents($recaptcha_url, false, $context);
+        $recaptcha_data = json_decode($recaptcha_verify);
+        
+        if (!$recaptcha_data->success) {
+            $captcha_err = "reCAPTCHA verification failed. Please try again.";
         }
     }
-    
-    // Close connection
-    $conn->close();
+
+    if (empty($captcha_err)) {
+        // Validate email
+        if (empty(trim($_POST["email"]))) {
+            $email_err = "Please enter your email.";
+        } else {
+            $email = filter_var(trim($_POST["email"]), FILTER_SANITIZE_EMAIL);
+        }
+        
+        // Validate password
+        if (empty(trim($_POST["password"]))) {
+            $password_err = "Please enter your password.";
+        } else {
+            $password = trim($_POST["password"]);
+        }
+        
+        // Check input errors before checking database
+        if (empty($email_err) && empty($password_err)) {
+            $sql = "SELECT id, email, password, google2fa_secret, is_2fa_enabled, auth_provider FROM users WHERE email = ?";
+            
+            if ($stmt = $conn->prepare($sql)) {
+                $stmt->bind_param("s", $param_email);
+                $param_email = $email;
+                
+                if ($stmt->execute()) {
+                    $stmt->store_result();
+                    
+                    if ($stmt->num_rows == 1) {                    
+                        $stmt->bind_result($id, $email_db, $hashed_password, $google2fa_secret, $is_2fa_enabled, $auth_provider);
+                        if ($stmt->fetch()) {
+                            if (password_verify($password, $hashed_password)) {
+                                // SUCCESSFUL LOGIN
+                                
+                                // Handle Remember Me
+                                if (isset($_POST['remember_me'])) {
+                                    setcookie('remember_email', $email_db, time() + (86400 * 30), "/"); // 30 days
+                                } else {
+                                    setcookie('remember_email', '', time() - 3600, "/"); // delete if unchecked
+                                }
+
+                                // Reset failed attempts
+                                $_SESSION['login_attempts'] = 0;
+                                unset($_SESSION['last_login_attempt']);
+                                
+                                // Get user details
+                                $user_query = "SELECT firstname, lastname, usertype, login_count FROM users WHERE id = ?";
+                                $stmt_user = $conn->prepare($user_query);
+                                $stmt_user->bind_param("i", $id);
+                                $stmt_user->execute();
+                                $stmt_user->bind_result($firstName, $lastName, $userType, $loginCount);
+                                $stmt_user->fetch();
+                                $stmt_user->close();
+
+                                // Set temporary session variables for 2FA phase
+                                $_SESSION["temp_user_id"] = $id;
+                                $_SESSION["temp_email"] = $email_db;
+                                $_SESSION["temp_firstname"] = $firstName;
+                                $_SESSION["temp_lastname"] = $lastName;
+                                $_SESSION["temp_usertype"] = $userType;
+                                $_SESSION["temp_login_count"] = $loginCount ?? 0;
+
+                                if ($is_2fa_enabled == 1) {
+                                    $_SESSION["pending_2fa_verification"] = true;
+                                    header("Location: verify_2fa.php");
+                                    exit();
+                                } else {
+                                    // Direct Login (2FA Disabled)
+                                    $_SESSION['loggedin'] = true;
+                                    $_SESSION['user_id'] = $id;
+                                    $_SESSION['id'] = $id;
+                                    $_SESSION['email'] = $email_db;
+                                    $_SESSION['user'] = $email_db;
+                                    $_SESSION['firstname'] = $firstName;
+                                    $_SESSION['lastname'] = $lastName;
+                                    $_SESSION['usertype'] = $userType ?? 'user';
+                                    
+                                    $prev_count = $loginCount ?? 0;
+                                    $_SESSION['login_count'] = $prev_count + 1;
+                                    
+                                    // Increment login count
+                                    $update_stmt = $conn->prepare("UPDATE users SET login_count = login_count + 1 WHERE id = ?");
+                                    $update_stmt->bind_param("i", $id);
+                                    $update_stmt->execute();
+                                    $update_stmt->close();
+                                    
+                                    // Log Login History
+                                    $ip = $_SERVER['REMOTE_ADDR'];
+                                    $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown Device';
+                                    $hist_sql = "INSERT INTO login_history (user_id, ip_address, device_info, status) VALUES (?, ?, ?, 'success')";
+                                    if ($hstmt = $conn->prepare($hist_sql)) {
+                                        $hstmt->bind_param("iss", $id, $ip, $ua);
+                                        $hstmt->execute();
+                                        $hstmt->close();
+                                    }
+                                    
+                                    // Clean up temp vars just in case
+                                    unset($_SESSION["temp_user_id"], $_SESSION["temp_email"], $_SESSION["temp_firstname"], $_SESSION["temp_lastname"], $_SESSION["temp_usertype"], $_SESSION["temp_login_count"]);
+                                    
+                                    if ($prev_count === 0) {
+                                        header('Location: welcome.php');
+                                    } elseif (isset($_SESSION['redirect_after_login'])) {
+                                        $redirect = $_SESSION['redirect_after_login'];
+                                        unset($_SESSION['redirect_after_login']);
+                                        header("Location: " . $redirect);
+                                    } else {
+                                        header('Location: home.php');
+                                    }
+                                    exit();
+                                }
+                            } else {
+                                // FAILED PASSWORD
+                                handle_failed_login($email, $conn);
+                                if ($auth_provider === 'google') {
+                                    $login_err = "This account was created with Google! Please click the 'Sign in with Google' button below.";
+                                } else {
+                                    $login_err = "Invalid email or password.";
+                                }
+                            }
+                        }
+                    } else {
+                        // EMAIL NOT FOUND
+                        handle_failed_login($email, $conn);
+                        $login_err = "Invalid email or password.";
+                    }
+                } else {
+                    $login_err = "Oops! Something went wrong. Please try again later.";
+                }
+                $stmt->close();
+            }
+        }
+    }
 }
+
+function handle_failed_login($email, $conn) {
+    if (!isset($_SESSION['login_attempts'])) {
+        $_SESSION['login_attempts'] = 0;
+    }
+    $_SESSION['login_attempts']++;
+    $_SESSION['last_login_attempt'] = time();
+    
+    // Log it to audit_logs (id is 0 because user failed to login)
+    log_activity(0, 'Failed Login', "Failed login attempt for email: " . $email);
+}
+
+$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -121,147 +225,57 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <title>BookWagon - Sign In</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons for Eye toggle -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Google reCAPTCHA script -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         :root {
-            --primary-color: #f8b079;
-            --primary-light: #ffd0b1;
-            --primary-dark: #e69c68;
-            --secondary-color: #f8fafc;
-            --accent-color: #6366f1; /* Indigo */
-            --text-dark: #1e293b;
-            --text-light: #64748b;
-            --text-muted: #94a3b8;
-            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --primary-color: #f8a100;
+            --secondary-color: #f8f9fa;
+            --accent-blue: #5b6bff;
+            --bg-cream: #faebc8;
         }
         
         body {
-            background: linear-gradient(135deg, #f0f4ff 0%, #eef1ff 100%);
-            font-family: 'Poppins', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            color: var(--text-dark);
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        body::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.5;
-            z-index: -1;
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
         }
         
         .login-container {
-            max-width: 900px;
+            max-width: 800px;
             margin: 40px auto;
-            border-radius: 20px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: var(--card-shadow);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
             background: white;
-            position: relative;
-            z-index: 2;
         }
         
         .login-row {
             display: flex;
-            min-height: 550px;
+            min-height: 500px;
         }
         
         .login-image {
             flex: 1;
-            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+            background-color: var(--bg-cream);
             position: relative;
             overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         
-        .login-image-content {
-            position: relative;
-            z-index: 5;
-            padding: 30px;
-            color: white;
-            text-align: center;
-            max-width: 80%;
-        }
-        
-        .login-image-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        .login-image-text {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            line-height: 1.6;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
-        
-        .floating-books {
+        .login-image img {
             position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-        
-        .floating-book {
-            position: absolute;
-            color: rgba(255, 255, 255, 0.2);
-            font-size: 2rem;
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        .book-1 {
-            top: 10%;
-            left: 10%;
-            animation-delay: 0s;
-        }
-        
-        .book-2 {
-            top: 20%;
-            right: 15%;
-            animation-delay: 1s;
-        }
-        
-        .book-3 {
-            bottom: 15%;
-            left: 15%;
-            animation-delay: 2s;
-        }
-        
-        .book-4 {
-            bottom: 25%;
-            right: 10%;
-            animation-delay: 3s;
-        }
-        
-        @keyframes float {
-            0% { transform: translateY(0) rotate(0); }
-            50% { transform: translateY(-15px) rotate(5deg); }
-            100% { transform: translateY(0) rotate(0); }
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 110%;
+            height: 110%;
+            object-fit: cover;
         }
         
         .login-form {
             flex: 1;
-            padding: 50px 40px;
+            padding: 40px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -269,122 +283,58 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         .logo {
             text-align: center;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin-bottom: 20px;
         }
         
         .logo img {
-            height: 70px;
-            transition: transform 0.3s ease;
-        }
-        
-        .logo-text {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-left: 10px;
-        }
-        
-        .logo:hover img {
-            transform: scale(1.05);
+            height: 100px;
         }
         
         h2 {
-            font-weight: 700;
-            font-size: 1.8rem;
+            font-weight: 600;
             text-align: center;
-            margin-bottom: 25px;
-            color: var(--text-dark);
-            position: relative;
-            display: inline-block;
-            padding-bottom: 10px;
-        }
-        
-        h2::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 4px;
-            background-color: var(--primary-color);
-            border-radius: 2px;
+            margin-bottom: 30px;
         }
         
         .form-control {
-            height: 55px;
-            padding: 12px 20px;
-            border-radius: 12px;
+            height: 50px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .form-group {
             margin-bottom: 20px;
-            border: 1px solid #e2e8f0;
-            font-size: 1rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
         }
         
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(248, 176, 121, 0.2);
+        /* Eye toggle styling */
+        .input-group-text {
+            background-color: white;
+            border-left: none;
+            cursor: pointer;
         }
-        
-        .form-control.is-invalid {
-            border-color: #dc3545;
-            background-image: none;
-        }
-        
-        .invalid-feedback {
-            color: #dc3545;
-            font-size: 0.85rem;
-            margin-top: -15px;
-            margin-bottom: 15px;
+        .password-field {
+            border-right: none;
         }
         
         .btn-signin {
-            height: 55px;
-            background: linear-gradient(to right, var(--primary-color), var(--primary-dark));
+            height: 50px;
+            background-color: var(--primary-color);
             border: none;
-            border-radius: 12px;
+            border-radius: 8px;
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: 18px;
             margin-top: 10px;
-            color: white;
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-signin::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to right, var(--primary-dark), var(--primary-color));
-            z-index: -1;
-            transition: opacity 0.3s ease;
-            opacity: 0;
         }
         
         .btn-signin:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(248, 176, 121, 0.4);
-        }
-        
-        .btn-signin:hover::after {
-            opacity: 1;
+            background-color: #e09000;
         }
         
         .form-divider {
             text-align: center;
             position: relative;
             margin: 30px 0;
-            font-size: 0.9rem;
-            color: var(--text-muted);
         }
         
         .form-divider::before {
@@ -392,9 +342,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             position: absolute;
             left: 0;
             top: 50%;
-            width: 42%;
+            width: 45%;
             height: 1px;
-            background-color: #e2e8f0;
+            background-color: #ddd;
         }
         
         .form-divider::after {
@@ -402,385 +352,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             position: absolute;
             right: 0;
             top: 50%;
-            width: 42%;
+            width: 45%;
             height: 1px;
-            background-color: #e2e8f0;
+            background-color: #ddd;
         }
         
         .signup-link {
             text-align: center;
             margin-top: 20px;
-            font-size: 0.95rem;
-            color: var(--text-light);
         }
         
         .text-primary {
             color: var(--primary-color) !important;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            text-decoration: none;
-        }
-        
-        .text-primary:hover {
-            color: var(--primary-dark) !important;
-            text-decoration: underline;
         }
         
         .alert {
-            padding: 15px;
-            margin-bottom: 25px;
-            border-radius: 12px;
-            border: none;
-            font-size: 0.95rem;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
         }
         
-        .alert-danger {
-            background-color: #fee2e2;
-            color: #b91c1c;
+        .blob-blue {
+            position: absolute;
+            background-color: var(--accent-blue);
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            z-index: 0;
         }
         
-        .form-check-input {
-            width: 18px;
-            height: 18px;
-            margin-top: 0.25em;
-            vertical-align: top;
-            background-color: #fff;
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: contain;
-            border: 1px solid #d1d5db;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            transition: all 0.3s ease;
-        }
-        
-        .form-check-input:checked {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .form-check-label {
-            margin-left: 5px;
-            font-size: 0.95rem;
-            color: var(--text-light);
-        }
-        
-        .forgot-password {
-            font-size: 0.95rem;
-            color: var(--primary-color);
-            transition: all 0.3s ease;
-            font-weight: 500;
-            text-decoration: none;
-        }
-        
-        .forgot-password:hover {
-            color: var(--primary-dark);
-            text-decoration: underline;
-        }
-        
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .login-container {
-                max-width: 95%;
-                margin: 30px auto;
-            }
-
-            .login-image-content {
-                padding: 25px;
-                max-width: 85%;
-            }
-
-            .login-image-title {
-                font-size: 1.8rem;
-            }
-
-            .login-image-text {
-                font-size: 1rem;
-            }
-        }
-
-        @media (max-width: 991px) {
-            .login-container {
-                max-width: 90%;
-                margin: 25px auto;
-            }
-
-            .login-image-content {
-                padding: 20px;
-                max-width: 90%;
-            }
-
-            .login-image-title {
-                font-size: 1.6rem;
-            }
-
-            .login-image-text {
-                font-size: 0.95rem;
-            }
-
-            .login-form {
-                padding: 45px 35px;
-            }
-
-            .form-control {
-                height: 50px;
-                padding: 10px 18px;
-                font-size: 0.95rem;
-            }
-
-            .btn-signin {
-                height: 50px;
-                font-size: 1rem;
-            }
-        }
+        .blob-blue-1 { width: 200px; height: 200px; top: -50px; left: -50px; }
+        .blob-blue-2 { width: 300px; height: 300px; bottom: -100px; left: -50px; }
+        .blob-blue-3 { width: 180px; height: 180px; top: 50%; right: -50px; transform: translateY(-50%); }
 
         @media (max-width: 768px) {
-            .login-row {
-                flex-direction: column;
-                min-height: auto;
-            }
-
-            .login-image {
-                display: none;
-            }
-
-            .login-form {
-                padding: 40px 30px;
-                flex: none;
-            }
-
-            .logo img {
-                height: 60px;
-            }
-
-            .logo-text {
-                font-size: 1.4rem;
-            }
-
-            h2 {
-                font-size: 1.7rem;
-            }
-
-            .form-control {
-                height: 48px;
-                padding: 10px 16px;
-                font-size: 0.95rem;
-                margin-bottom: 18px;
-            }
-
-            .btn-signin {
-                height: 48px;
-                font-size: 1rem;
-                margin-top: 8px;
-            }
-
-            .form-check {
-                margin-bottom: 20px;
-            }
-
-            .form-check-label {
-                font-size: 0.9rem;
-            }
-
-            .forgot-password {
-                font-size: 0.9rem;
-            }
-
-            .signup-link {
-                font-size: 0.9rem;
-                margin-top: 18px;
-            }
-
-            .alert {
-                padding: 12px;
-                font-size: 0.9rem;
-                margin-bottom: 20px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .login-container {
-                max-width: 95%;
-                margin: 20px auto;
-                border-radius: 16px;
-            }
-
-            .login-form {
-                padding: 30px 20px;
-            }
-
-            .logo {
-                margin-bottom: 20px;
-            }
-
-            .logo img {
-                height: 50px;
-            }
-
-            .logo-text {
-                font-size: 1.2rem;
-                margin-left: 8px;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-                margin-bottom: 20px;
-            }
-
-            .form-control {
-                height: 45px;
-                padding: 8px 14px;
-                font-size: 0.9rem;
-                margin-bottom: 16px;
-                border-radius: 10px;
-            }
-
-            .btn-signin {
-                height: 45px;
-                font-size: 0.95rem;
-                margin-top: 6px;
-                border-radius: 10px;
-            }
-
-            .form-check {
-                margin-bottom: 18px;
-            }
-
-            .form-check-input {
-                width: 16px;
-                height: 16px;
-            }
-
-            .form-check-label {
-                font-size: 0.85rem;
-                margin-left: 6px;
-            }
-
-            .forgot-password {
-                font-size: 0.85rem;
-            }
-
-            .form-divider {
-                margin: 25px 0;
-                font-size: 0.85rem;
-            }
-
-            .form-divider::before,
-            .form-divider::after {
-                width: 38%;
-            }
-
-            .signup-link {
-                font-size: 0.85rem;
-                margin-top: 16px;
-            }
-
-            .alert {
-                padding: 10px;
-                font-size: 0.85rem;
-                margin-bottom: 18px;
-                border-radius: 8px;
-            }
-
-            .invalid-feedback {
-                font-size: 0.8rem;
-                margin-top: -12px;
-                margin-bottom: 12px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .login-container {
-                max-width: 98%;
-                margin: 15px auto;
-                border-radius: 12px;
-            }
-
-            .login-form {
-                padding: 25px 16px;
-            }
-
-            .logo {
-                margin-bottom: 18px;
-            }
-
-            .logo img {
-                height: 45px;
-            }
-
-            .logo-text {
-                font-size: 1.1rem;
-                margin-left: 6px;
-            }
-
-            h2 {
-                font-size: 1.4rem;
-                margin-bottom: 18px;
-            }
-
-            .form-control {
-                height: 42px;
-                padding: 8px 12px;
-                font-size: 0.85rem;
-                margin-bottom: 14px;
-                border-radius: 8px;
-            }
-
-            .btn-signin {
-                height: 42px;
-                font-size: 0.9rem;
-                margin-top: 4px;
-                border-radius: 8px;
-            }
-
-            .form-check {
-                margin-bottom: 16px;
-            }
-
-            .form-check-input {
-                width: 14px;
-                height: 14px;
-            }
-
-            .form-check-label {
-                font-size: 0.8rem;
-                margin-left: 5px;
-            }
-
-            .forgot-password {
-                font-size: 0.8rem;
-            }
-
-            .form-divider {
-                margin: 20px 0;
-                font-size: 0.8rem;
-            }
-
-            .form-divider::before,
-            .form-divider::after {
-                width: 35%;
-            }
-
-            .signup-link {
-                font-size: 0.8rem;
-                margin-top: 14px;
-            }
-
-            .alert {
-                padding: 8px;
-                font-size: 0.8rem;
-                margin-bottom: 16px;
-                border-radius: 6px;
-            }
-
-            .invalid-feedback {
-                font-size: 0.75rem;
-                margin-top: -10px;
-                margin-bottom: 10px;
-            }
+            .login-row { flex-direction: column; }
+            .login-image { display: none; }
         }
     </style>
 </head>
@@ -790,61 +395,77 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="login-row">
                 <!-- Left side - Decorative illustration -->
                 <div class="login-image">
-                    <div class="floating-books">
-                        <div class="floating-book book-1"><i class="fas fa-book"></i></div>
-                        <div class="floating-book book-2"><i class="fas fa-book-open"></i></div>
-                        <div class="floating-book book-3"><i class="fas fa-bookmark"></i></div>
-                        <div class="floating-book book-4"><i class="fas fa-book-reader"></i></div>
-                    </div>
-                    
-                    <div class="login-image-content">
-                        <div class="login-image-title">Welcome Back!</div>
-                        <div class="login-image-text">Access your BookWagon account to discover, buy, sell and rent books from a community of passionate readers across the Philippines.</div>
-                    </div>
+                    <div class="blob-blue blob-blue-1"></div>
+                    <div class="blob-blue blob-blue-2"></div>
+                    <div class="blob-blue blob-blue-3"></div>
                 </div>
                 
                 <!-- Right side - Login form -->
                 <div class="login-form">
                     <div class="logo">
                         <img src="images/logo.png" alt="BookWagon Logo">
-
                     </div>
                     
-                    <div class="text-center mb-4">
-                        <h2>Sign In</h2>
-                    </div>
+                    <h2>Sign In</h2>
                     
                     <?php 
                     if(!empty($login_err)){
-                        echo '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>' . $login_err . '</div>';
+                        echo '<div class="alert alert-danger fw-bold text-center">' . $login_err . '</div>';
                     }        
                     ?>
                     
                     <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+                        <!-- Email -->
                         <div class="form-group">
                             <input type="email" name="email" class="form-control <?php echo (!empty($email_err)) ? 'is-invalid' : ''; ?>" 
-                                   value="<?php echo $email; ?>" placeholder="Email Address">
+                                   value="<?php echo htmlspecialchars($email); ?>" placeholder="Email Address">
                             <span class="invalid-feedback"><?php echo $email_err; ?></span>
-                        </div>    
-                        <div class="form-group">
-                            <input type="password" name="password" class="form-control <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>" 
-                                   placeholder="Password">
-                            <span class="invalid-feedback"><?php echo $password_err; ?></span>
                         </div>
-                        <div class="form-check mb-3 d-flex justify-content-between align-items-center">
-                            <div>
-                                <input class="form-check-input" type="checkbox" value="" id="rememberPasswordCheck">
-                                <label class="form-check-label" for="rememberPasswordCheck">
-                                    Remember me
-                                </label>
+                        
+                        <!-- Password with Eye Toggle -->
+                        <div class="form-group">
+                            <div class="input-group">
+                                <input type="password" id="password" name="password" class="form-control password-field <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>" 
+                                       placeholder="Password">
+                                <span class="input-group-text" onclick="togglePassword('password', 'toggle-eye')">
+                                    <i class="bi bi-eye-slash" id="toggle-eye"></i>
+                                </span>
                             </div>
-                            <a href="forgot-password.php" class="forgot-password">Forgot password?</a>
+                            <?php if(!empty($password_err)): ?>
+                                <div class="text-danger small mt-1"><?php echo $password_err; ?></div>
+                            <?php endif; ?>
                         </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="remember_me" value="1" id="rememberPasswordCheck" <?php echo isset($_COOKIE['remember_email']) ? 'checked' : ''; ?>>
+                            <label class="form-check-label" for="rememberPasswordCheck">
+                                Remember me
+                            </label>
+                            <a href="forgot-password.php" class="float-end text-primary">Forgot password?</a>
+                        </div>
+                        
+                        <!-- Google reCAPTCHA -->
+                        <div class="form-group d-flex flex-column align-items-center">
+                            <div class="g-recaptcha" data-sitekey="6LcndJktAAAAAHfBOz7zcg5fxVW8dmJT9UoGO9jk"></div>
+                            <?php if(!empty($captcha_err)): ?>
+                                <div class="text-danger small mt-2 fw-bold text-center"><?php echo $captcha_err; ?></div>
+                            <?php endif; ?>
+                        </div>
+                        
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary btn-signin w-100">Sign In</button>
+                            <button type="submit" class="btn btn-primary btn-signin w-100" <?php echo (!empty($login_err) && strpos($login_err, 'locked') !== false) ? 'disabled' : ''; ?>>Sign In</button>
                         </div>
-                        <div class="form-divider">or sign in with</div>
-                        <div class="signup-link">
+                        
+                        <div class="form-divider">Or</div>
+                        
+                        <div class="form-group mt-3">
+                            <a href="<?php echo htmlspecialchars($google_auth_url); ?>" class="btn btn-outline-dark w-100 d-flex justify-content-center align-items-center" style="gap: 10px; border-radius: 8px; height: 50px; font-weight: 500;">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google Logo" style="height: 20px;">
+                                Sign in with Google
+                            </a>
+                        </div>
+                        
+                        <div class="signup-link mt-3">
                             Don't have an account? <a href="signup.php" class="text-primary">Sign up</a>
                         </div>
                     </form>
@@ -855,5 +476,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS for Password Toggle -->
+    <script>
+        function togglePassword(inputId, iconId) {
+            const passwordInput = document.getElementById(inputId);
+            const eyeIcon = document.getElementById(iconId);
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.remove('bi-eye-slash');
+                eyeIcon.classList.add('bi-eye');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('bi-eye');
+                eyeIcon.classList.add('bi-eye-slash');
+            }
+        }
+    </script>
 </body>
 </html>

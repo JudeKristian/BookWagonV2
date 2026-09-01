@@ -1,85 +1,69 @@
-.tab-menu {
+/* Standardize Google Font across all sub-navigation tabs */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.custom-nav-tabs,
+.custom-nav-tabs .nav-link,
+.custom-nav-tabs .nav-item {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+.custom-nav-tabs {
+    border-bottom: 1px solid #e2e8f0;
     display: flex;
-    justify-content: space-around;
-    padding: 10px;
-    border-bottom: 1px solid #ccc;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
+    justify-content: space-between;
+    padding: 0;
+    margin-top: 20px;
+    margin-bottom: 35px;
+    list-style: none !important;
+    background-color: transparent !important;
+}
 
-  .tab-menu::-webkit-scrollbar {
-    display: none;
-  }
+.custom-nav-tabs .nav-item {
+    list-style: none !important;
+    flex-grow: 1;
+    text-align: center;
+}
 
-  /* Mobile responsive adjustments */
-  @media (max-width: 768px) {
-    .tab-menu {
-      justify-content: flex-start;
-      gap: 15px;
-      padding: 10px 15px;
-    }
-
-    .tab-menu a {
-      flex-shrink: 0;
-      white-space: nowrap;
-      min-width: fit-content;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .tab-menu {
-      gap: 10px;
-      padding: 8px 12px;
-    }
-
-    .tab-menu a {
-      font-size: 14px;
-      padding: 8px;
-    }
-
-    .tab-icon {
-      height: 20px;
-      width: 20px;
-      margin-right: 6px;
-    }
-  }
-.tab-menu a {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    cursor: pointer;
+.custom-nav-tabs .nav-link {
+    color: #475569;
+    font-weight: 500 !important; /* Keep font weight constant on every page */
+    font-size: 15px;
+    padding: 12px 18px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+    display: inline-block;
     text-decoration: none;
-    color: black; /* Default color */
-    font-size: 16px; /* Default size */
-    transition: color 0.3s ease;
-  }
-  
-  /* SVG icon styling */
-  .tab-icon {
-    margin-right: 8px;
-    height: 24px;
-    width: 24px;
-    transition: all 0.3s ease;
-    /* stroke is used for outline icons */
-    stroke: currentColor;
-    stroke-width: 1.5;
-  }
-  
-  .tab-menu a:hover {
-    color: #f8ad3e; /* Change color on hover */
-  }
-  
-  .tab-menu a:hover .tab-icon {
-    transform: scale(1.1);
-    /* The stroke will automatically change with the text color */
-  }
-  
-  .tab-menu a.active {
-    color: #f8ad3e; /* Active color */
-    border-bottom: 2px solid #f8ad3e; /* Active underline */
-  }
-  
-  /* The SVG will automatically change color with the text */
-  
+    letter-spacing: 0.1px;
+    background-color: transparent !important;
+}
+
+.custom-nav-tabs .nav-link:hover {
+    color: #f8a100 !important;
+    border-bottom: 2px solid #f8a100;
+    background-color: transparent !important;
+}
+
+.custom-nav-tabs .nav-link.active {
+    color: #f8a100 !important;
+    font-weight: 500 !important; /* Never shift font-weight to prevent layout jumping */
+    border-bottom: 2px solid #f8a100;
+    background-color: transparent !important;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .custom-nav-tabs {
+        overflow-x: auto;
+        justify-content: flex-start;
+        white-space: nowrap;
+        padding-bottom: 5px;
+    }
+    .custom-nav-tabs .nav-item {
+        flex-grow: 0;
+    }
+    .custom-nav-tabs .nav-link {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+}
